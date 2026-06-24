@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Analysis - EDA Insights</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+</head>
+<body>
+    <!-- NAVIGATION & HEADER -->
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">📊</span>
+                <span class="logo-text">HealthAlign Analysis</span>
+            </div>
+            <nav class="nav-links">
+                <a href="/" class="nav-link">Assessment</a>
+                <a href="#" class="nav-link active">Analysis</a>
+                <button class="theme-toggle" id="themeToggle">
+                    <span>🌙</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="container">
+        <section class="analysis-section">
+            <h1 class="section-title">Comprehensive Health Analysis</h1>
+            <p class="section-subtitle">Explore obesity patterns and health metrics across the dataset</p>
+
+            <!-- CHARTS GRID -->
+            <div class="charts-grid">
+                <!-- Chart 1: Obesity Distribution -->
+                <div class="chart-card" data-chart="obesity-distribution">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Distribution of Obesity Levels</h3>
+                        <p class="chart-description">Percentage of population in each obesity category</p>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="obesityChart"></canvas>
+                    </div>
+                    <div class="chart-inference">
+                        <h4>Key Insights</h4>
+                        <p>This visualization shows how the dataset population is distributed across different obesity classifications. Understanding these patterns helps identify which weight categories are most common and where intervention efforts should focus.</p>
+                    </div>
+                </div>
+
+                <!-- Chart 2: BMI Distribution -->
+                <div class="chart-card" data-chart="bmi-distribution">
+                    <div class="chart-header">
+                        <h3 class="chart-title">BMI Distribution</h3>
+                        <p class="chart-description">Population spread across BMI ranges</p>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="bmiChart"></canvas>
+                    </div>
+                    <div class="chart-inference">
+                        <h4>Key Insights</h4>
+                        <p>Body Mass Index (BMI) is a key indicator of weight status. The distribution shows where most individuals fall on the BMI scale. Normal BMI (18.5-24.9) indicates a healthy weight range, while values outside this range suggest underweight or overweight conditions.</p>
+                    </div>
+                </div>
+
+                <!-- Chart 3: Age vs Weight -->
+                <div class="chart-card" data-chart="age-weight">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Age vs Weight Relationship</h3>
+                        <p class="chart-description">How weight changes across different age groups</p>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="ageWeightChart"></canvas>
+                    </div>
+                    <div class="chart-inference">
+                        <h4>Key Insights</h4>
+                        <p>Weight management varies by age. Middle-aged populations often show higher average weights, while younger populations tend to have more variation. Age-specific health strategies can be more effective for targeting obesity intervention.</p>
+                    </div>
+                </div>
+
+                <!-- Chart 4: Exercise Frequency Impact -->
+                <div class="chart-card" data-chart="exercise-impact">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Physical Activity Impact on Weight Status</h3>
+                        <p class="chart-description">Average weight by exercise frequency</p>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="exerciseChart"></canvas>
+                    </div>
+                    <div class="chart-inference">
+                        <h4>Key Insights</h4>
+                        <p>People who exercise regularly tend to have lower average weights compared to sedentary individuals. Physical activity is one of the most important factors in maintaining a healthy weight and is strongly correlated with better health outcomes.</p>
+                    </div>
+                </div>
+
+                <!-- Chart 5: Dietary Habits Impact -->
+                <div class="chart-card" data-chart="diet-impact">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Dietary Habits and Obesity Risk</h3>
+                        <p class="chart-description">Impact of high-calorie food consumption</p>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="dietChart"></canvas>
+                    </div>
+                    <div class="chart-inference">
+                        <h4>Key Insights</h4>
+                        <p>Consuming high-calorie foods frequently is significantly associated with higher obesity rates. Those who avoid high-calorie foods show substantially better weight management. Dietary choices are fundamental to obesity prevention.</p>
+                    </div>
+                </div>
+
+                <!-- Chart 6: Water Intake Impact -->
+                <div class="chart-card" data-chart="water-impact">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Water Consumption and Health</h3>
+                        <p class="chart-description">Average weight by daily water intake</p>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="waterChart"></canvas>
+                    </div>
+                    <div class="chart-inference">
+                        <h4>Key Insights</h4>
+                        <p>Adequate water consumption is associated with better weight management. People who drink sufficient water daily tend to have lower average weights. Hydration supports metabolism, appetite control, and overall health.</p>
+                    </div>
+                </div>
+
+                <!-- Chart 7: Technology Usage Impact -->
+                <div class="chart-card" data-chart="tech-impact">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Screen Time and Sedentary Behavior</h3>
+                        <p class="chart-description">Effect of technology usage on weight</p>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="techChart"></canvas>
+                    </div>
+                    <div class="chart-inference">
+                        <h4>Key Insights</h4>
+                        <p>Excessive screen time is associated with increased weight and obesity risk. Limiting technology usage and promoting movement breaks throughout the day can significantly reduce sedentary behavior and improve weight management.</p>
+                    </div>
+                </div>
+
+                <!-- Chart 8: Feature Importance -->
+                <div class="chart-card" data-chart="feature-importance">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Most Important Health Factors</h3>
+                        <p class="chart-description">Which factors matter most for predicting obesity</p>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="importanceChart"></canvas>
+                    </div>
+                    <div class="chart-inference">
+                        <h4>Key Insights</h4>
+                        <p>Machine learning analysis reveals which factors are most predictive of obesity. Weight, height (for BMI), and physical activity frequency are among the strongest indicators. Understanding these key drivers helps focus health interventions effectively.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STATISTICS SECTION -->
+            <section class="statistics-section">
+                <h2 class="section-title">Dataset Statistics</h2>
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalRecords">—</div>
+                        <div class="stat-label">Total Records</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgWeight">—</div>
+                        <div class="stat-label">Average Weight (kg)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgHeight">—</div>
+                        <div class="stat-label">Average Height (m)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgBMI">—</div>
+                        <div class="stat-label">Average BMI</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="exerciseRate">—</div>
+                        <div class="stat-label">Exercise (days/week)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="waterIntake">—</div>
+                        <div class="stat-label">Water (liters/day)</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- KEY FINDINGS -->
+            <section class="findings-section">
+                <h2 class="section-title">Key Findings</h2>
+                <div class="findings-list">
+                    <div class="finding-item">
+                        <span class="finding-number">1</span>
+                        <div class="finding-content">
+                            <h4>Physical Activity is Critical</h4>
+                            <p>Regular exercise is one of the strongest predictors of healthy weight. Individuals exercising 3-5 times per week show significantly lower obesity rates.</p>
+                        </div>
+                    </div>
+                    <div class="finding-item">
+                        <span class="finding-number">2</span>
+                        <div class="finding-content">
+                            <h4>Dietary Choices Matter</h4>
+                            <p>High-calorie food consumption is strongly associated with obesity. Those who limit these foods show better weight management outcomes.</p>
+                        </div>
+                    </div>
+                    <div class="finding-item">
+                        <span class="finding-number">3</span>
+                        <div class="finding-content">
+                            <h4>Hydration Supports Health</h4>
+                            <p>Adequate daily water intake (2+ liters) is associated with better weight management and improved metabolic health.</p>
+                        </div>
+                    </div>
+                    <div class="finding-item">
+                        <span class="finding-number">4</span>
+                        <div class="finding-content">
+                            <h4>Screen Time Has Impact</h4>
+                            <p>Excessive technology use promotes sedentary behavior. Limiting screen time to under 4 hours daily helps maintain healthy weight.</p>
+                        </div>
+                    </div>
+                    <div class="finding-item">
+                        <span class="finding-number">5</span>
+                        <div class="finding-content">
+                            <h4>Family History Influences Risk</h4>
+                            <p>Genetic predisposition plays a role, but lifestyle changes can mitigate inherited obesity risk through healthier habits.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RECOMMENDATIONS -->
+            <section class="recommendations-section">
+                <h2 class="section-title">Evidence-Based Recommendations</h2>
+                <div class="recommendations-grid">
+                    <div class="recommendation-card">
+                        <div class="recommendation-icon">🏃</div>
+                        <h4>Exercise Regularly</h4>
+                        <p>Aim for at least 150 minutes of moderate aerobic activity per week. Find activities you enjoy to maintain consistency.</p>
+                    </div>
+                    <div class="recommendation-card">
+                        <div class="recommendation-icon">🥗</div>
+                        <h4>Eat Balanced Meals</h4>
+                        <p>Include vegetables, whole grains, lean proteins, and healthy fats. Limit processed and high-calorie foods.</p>
+                    </div>
+                    <div class="recommendation-card">
+                        <div class="recommendation-icon">💧</div>
+                        <h4>Stay Hydrated</h4>
+                        <p>Drink 2-3 liters of water daily. Water supports metabolism and helps control appetite naturally.</p>
+                    </div>
+                    <div class="recommendation-card">
+                        <div class="recommendation-icon">😴</div>
+                        <h4>Get Quality Sleep</h4>
+                        <p>Aim for 7-9 hours of sleep nightly. Sleep affects metabolism and appetite regulation hormones.</p>
+                    </div>
+                    <div class="recommendation-card">
+                        <div class="recommendation-icon">⏰</div>
+                        <h4>Limit Screen Time</h4>
+                        <p>Keep technology use to under 4 hours daily (excluding work). Take regular movement breaks.</p>
+                    </div>
+                    <div class="recommendation-card">
+                        <div class="recommendation-icon">🎯</div>
+                        <h4>Set Realistic Goals</h4>
+                        <p>Target 0.5-1 kg weight loss per week if needed. Small consistent changes lead to lasting results.</p>
+                    </div>
+                </div>
+            </section>
+        </section>
+
+        <!-- BACK BUTTON -->
+        <div class="back-button-container">
+            <a href="/" class="btn-secondary">Back to Assessment</a>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <p>&copy; 2024 HealthAlign Analysis Tool</p>
+        <p>Dataset: <span>Obesity Database from UCI Machine Learning Repository</span></p>
+        <p class="disclaimer">All information is derived from scientific analysis and should complement, not replace, professional medical advice.</p>
+    </footer>
+
+    <!-- SCRIPTS -->
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/analysis.js') }}"></script>
+</body>
+</html>
