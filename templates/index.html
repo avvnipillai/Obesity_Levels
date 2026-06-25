@@ -1,329 +1,829 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Health & Weight Assessment - Obesity Prediction</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>HealthAlign — Know Your Body</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ═══════════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════════ */
+:root {
+  --bg:        #07080f;
+  --bg2:       #0d0f1c;
+  --bg3:       #131628;
+  --surface:   rgba(255,255,255,0.04);
+  --surface2:  rgba(255,255,255,0.07);
+  --border:    rgba(255,255,255,0.08);
+  --text:      #e8eaf0;
+  --muted:     rgba(232,234,240,0.5);
+  --accent:    #7c3aed;
+  --accent2:   #06b6d4;
+  --rose:      #f43f5e;
+  --gold:      #f59e0b;
+  --green:     #10b981;
+
+  --glow-v:    rgba(124,58,237,0.35);
+  --glow-c:    rgba(6,182,212,0.25);
+  --glow-r:    rgba(244,63,94,0.25);
+
+  --r:         16px;
+  --r2:        24px;
+  --r3:        12px;
+  --ease:      cubic-bezier(0.16,1,0.3,1);
+
+  --font-head: 'Syne', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+[data-theme="light"] {
+  --bg:        #f0f2ff;
+  --bg2:       #e8eaff;
+  --bg3:       #dde0ff;
+  --surface:   rgba(255,255,255,0.7);
+  --surface2:  rgba(255,255,255,0.9);
+  --border:    rgba(100,80,200,0.15);
+  --text:      #1a1030;
+  --muted:     rgba(26,16,48,0.55);
+  --glow-v:    rgba(124,58,237,0.12);
+  --glow-c:    rgba(6,182,212,0.10);
+  --glow-r:    rgba(244,63,94,0.10);
+}
+
+/* ═══ RESET ═══ */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;font-size:16px}
+body{
+  font-family:var(--font-body);
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+  transition:background .4s,color .4s;
+}
+
+/* ═══ AMBIENT ORBS ═══ */
+.orb{
+  position:fixed;pointer-events:none;border-radius:50%;filter:blur(90px);
+  animation:orbFloat 12s ease-in-out infinite;z-index:0;
+}
+.orb1{width:600px;height:600px;background:var(--glow-v);top:-200px;left:-150px;animation-delay:0s}
+.orb2{width:500px;height:500px;background:var(--glow-c);bottom:-100px;right:-100px;animation-delay:-5s}
+.orb3{width:350px;height:350px;background:var(--glow-r);top:50%;left:50%;transform:translate(-50%,-50%);animation-delay:-8s}
+@keyframes orbFloat{
+  0%,100%{transform:translate(0,0)}
+  33%{transform:translate(30px,-40px)}
+  66%{transform:translate(-20px,30px)}
+}
+
+/* ═══ NAV ═══ */
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:1rem 2.5rem;
+  background:rgba(7,8,15,0.6);
+  backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border);
+  transition:background .4s;
+}
+[data-theme="light"] .nav{background:rgba(240,242,255,0.7)}
+.nav-logo{
+  font-family:var(--font-head);font-weight:800;font-size:1.4rem;
+  background:linear-gradient(135deg,#a78bfa,#38bdf8);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  display:flex;align-items:center;gap:.5rem;
+}
+.nav-logo span{font-size:1.6rem;-webkit-text-fill-color:initial}
+.nav-right{display:flex;gap:1rem;align-items:center}
+.nav-link{
+  color:var(--muted);text-decoration:none;font-size:.9rem;font-weight:500;
+  padding:.4rem .9rem;border-radius:99px;transition:all .25s;
+}
+.nav-link:hover,.nav-link.active{color:var(--text);background:var(--surface2)}
+.theme-btn{
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--text);border-radius:99px;padding:.45rem 1rem;
+  font-size:.85rem;cursor:pointer;display:flex;align-items:center;gap:.4rem;
+  transition:all .3s;font-family:var(--font-body);
+}
+.theme-btn:hover{background:var(--surface);box-shadow:0 0 16px var(--glow-v)}
+
+/* ═══ HERO SECTION ═══ */
+.hero{
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:7rem 2rem 3rem;position:relative;z-index:1;text-align:center;
+}
+.hero-eyebrow{
+  font-size:.8rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--accent2);font-weight:600;margin-bottom:1.2rem;
+  display:inline-flex;align-items:center;gap:.6rem;
+}
+.hero-eyebrow::before,.hero-eyebrow::after{
+  content:'';width:32px;height:1px;background:var(--accent2);opacity:.5;
+}
+.hero-title{
+  font-family:var(--font-head);font-weight:800;
+  font-size:clamp(2.5rem,6vw,4.2rem);line-height:1.1;
+  margin-bottom:1.2rem;
+}
+.hero-title .gr{
+  background:linear-gradient(135deg,#a78bfa 0%,#38bdf8 50%,#34d399 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-sub{
+  font-size:1.1rem;color:var(--muted);max-width:520px;
+  line-height:1.7;margin-bottom:3rem;
+}
+
+/* ═══ SCALE ANIMATION ═══ */
+.scale-wrap{
+  position:relative;width:220px;height:280px;
+  margin:0 auto 2.5rem;cursor:pointer;user-select:none;
+}
+.scale-svg{width:100%;height:100%}
+/* glow ring under scale */
+.scale-glow{
+  position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);
+  width:160px;height:20px;
+  background:radial-gradient(ellipse,var(--glow-v) 0%,transparent 70%);
+  animation:glowPulse 2s ease-in-out infinite;
+}
+@keyframes glowPulse{0%,100%{opacity:.6;transform:translateX(-50%) scaleX(1)}50%{opacity:1;transform:translateX(-50%) scaleX(1.15)}}
+.scale-readout{
+  position:absolute;top:44px;left:50%;transform:translateX(-50%);
+  text-align:center;pointer-events:none;
+}
+.scale-kg{
+  font-family:var(--font-head);font-weight:800;font-size:2rem;
+  background:linear-gradient(135deg,#a78bfa,#38bdf8);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  display:block;transition:all .2s;
+}
+.scale-unit{font-size:.72rem;color:var(--muted);letter-spacing:.08em}
+.scale-hint{
+  font-size:.75rem;color:var(--muted);margin-top:1rem;
+  display:flex;align-items:center;gap:.3rem;justify-content:center;
+}
+.scale-hint::before{content:'👆';font-size:1rem}
+
+/* needle pivot animation */
+.needle-pivot{transform-origin:50% 100%;animation:needleIdle 3s ease-in-out infinite}
+@keyframes needleIdle{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}
+
+/* ═══ PROGRESS INDICATOR ═══ */
+.progress-wrap{
+  display:flex;gap:.5rem;margin-bottom:2rem;align-items:center;
+  justify-content:center;
+}
+.prog-step{
+  width:28px;height:4px;border-radius:99px;
+  background:var(--border);transition:all .4s var(--ease);
+}
+.prog-step.active{background:var(--accent);width:40px}
+.prog-step.done{background:var(--green)}
+
+/* ═══ FORM WRAPPER ═══ */
+.form-outer{
+  max-width:860px;margin:0 auto;padding:0 1.5rem 5rem;
+  position:relative;z-index:1;
+}
+
+/* ═══ CARD SECTION ═══ */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r2);
+  padding:2rem 2.2rem;
+  margin-bottom:1.5rem;
+  backdrop-filter:blur(12px);
+  transition:all .35s var(--ease);
+  position:relative;overflow:hidden;
+}
+.card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(124,58,237,.04) 0%,transparent 60%);
+  pointer-events:none;
+}
+.card:hover{border-color:rgba(124,58,237,.3);box-shadow:0 0 40px var(--glow-v)}
+.card-label{
+  font-family:var(--font-head);font-size:.7rem;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;
+  color:var(--accent2);margin-bottom:1.5rem;
+  display:flex;align-items:center;gap:.5rem;
+}
+.card-label::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--accent2),transparent);opacity:.3}
+
+/* ═══ INPUT ROW ═══ */
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.2rem}
+@media(max-width:640px){.row2,.row3{grid-template-columns:1fr}}
+
+.field{display:flex;flex-direction:column;gap:.5rem}
+.field-q{
+  font-size:.9rem;font-weight:500;color:var(--text);
+  line-height:1.4;
+}
+.field-q .emoji{margin-right:.3rem;font-size:1rem}
+
+/* ═══ STYLED SELECT ═══ */
+.sel-wrap{position:relative}
+.sel-wrap select{
+  width:100%;appearance:none;-webkit-appearance:none;
+  background:var(--bg3);
+  border:1px solid var(--border);
+  color:var(--text);
+  border-radius:var(--r3);
+  padding:.75rem 2.8rem .75rem 1rem;
+  font-size:.93rem;font-family:var(--font-body);
+  cursor:pointer;
+  transition:border-color .25s,box-shadow .25s;
+  outline:none;
+}
+.sel-wrap select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,58,237,.18)}
+.sel-wrap::after{
+  content:'';position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  width:10px;height:6px;pointer-events:none;
+  background:var(--muted);
+  clip-path:polygon(0 0,100% 0,50% 100%);
+}
+
+/* ═══ NUMBER INPUT WITH UNIT SWITCHER ═══ */
+.num-unit-wrap{
+  display:flex;border:1px solid var(--border);
+  border-radius:var(--r3);overflow:hidden;
+  background:var(--bg3);
+  transition:border-color .25s,box-shadow .25s;
+}
+.num-unit-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,58,237,.18)}
+.num-unit-wrap input{
+  flex:1;background:transparent;border:none;outline:none;
+  padding:.75rem 1rem;color:var(--text);font-size:.93rem;font-family:var(--font-body);
+}
+.num-unit-wrap input::placeholder{color:var(--muted)}
+.unit-toggle{
+  display:flex;border-left:1px solid var(--border);
+}
+.unit-toggle label{
+  display:flex;align-items:center;padding:.4rem .55rem;
+  font-size:.75rem;font-weight:600;cursor:pointer;
+  color:var(--muted);transition:all .2s;white-space:nowrap;
+}
+.unit-toggle input[type=radio]{display:none}
+.unit-toggle input[type=radio]:checked + label{
+  color:var(--accent);background:rgba(124,58,237,.15);
+}
+.unit-toggle label:hover{color:var(--text)}
+
+/* ═══ PLAIN NUMBER INPUT ═══ */
+.plain-input{
+  width:100%;background:var(--bg3);border:1px solid var(--border);
+  color:var(--text);border-radius:var(--r3);
+  padding:.75rem 1rem;font-size:.93rem;font-family:var(--font-body);
+  outline:none;transition:border-color .25s,box-shadow .25s;
+}
+.plain-input::placeholder{color:var(--muted)}
+.plain-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,58,237,.18)}
+
+/* ═══ CHIP TOGGLE ═══ */
+.chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.3rem}
+.chip-in{display:none}
+.chip-lbl{
+  padding:.5rem 1.1rem;border-radius:99px;
+  border:1px solid var(--border);font-size:.85rem;
+  cursor:pointer;transition:all .25s var(--ease);
+  color:var(--muted);background:var(--bg3);user-select:none;
+}
+.chip-in:checked + .chip-lbl{
+  background:linear-gradient(135deg,var(--accent),#9333ea);
+  color:#fff;border-color:transparent;
+  box-shadow:0 4px 18px rgba(124,58,237,.4);
+  transform:translateY(-2px);
+}
+.chip-lbl:hover{border-color:var(--accent);color:var(--text)}
+
+/* ═══ RANGE SLIDER ═══ */
+.range-field{position:relative}
+.range-row{display:flex;align-items:center;gap:1rem}
+.range-val{
+  min-width:36px;text-align:right;font-weight:700;
+  font-size:1rem;color:var(--accent);font-family:var(--font-head);
+}
+input[type=range]{
+  flex:1;height:5px;border-radius:99px;
+  background:var(--border);outline:none;
+  -webkit-appearance:none;appearance:none;cursor:pointer;
+  transition:background .2s;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),#9333ea);
+  box-shadow:0 0 10px rgba(124,58,237,.5);
+  cursor:pointer;transition:transform .2s,box-shadow .2s;
+}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2);box-shadow:0 0 18px rgba(124,58,237,.7)}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;border:none;background:linear-gradient(135deg,var(--accent),#9333ea);cursor:pointer}
+.range-labels{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-top:.3rem}
+
+/* ═══ SUBMIT BUTTON ═══ */
+.submit-wrap{margin-top:2rem;text-align:center}
+.btn-submit{
+  display:inline-flex;align-items:center;gap:.7rem;
+  background:linear-gradient(135deg,#7c3aed,#06b6d4);
+  color:#fff;border:none;border-radius:99px;
+  padding:1rem 2.8rem;font-size:1.05rem;font-weight:700;
+  font-family:var(--font-head);cursor:pointer;letter-spacing:.02em;
+  box-shadow:0 6px 40px rgba(124,58,237,.45);
+  transition:all .3s var(--ease);position:relative;overflow:hidden;
+}
+.btn-submit::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.15),transparent);
+  border-radius:inherit;
+}
+.btn-submit:hover{transform:translateY(-3px);box-shadow:0 12px 50px rgba(124,58,237,.6)}
+.btn-submit:active{transform:translateY(-1px)}
+.btn-submit .spin{
+  width:18px;height:18px;border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.btn-submit.loading .spin{display:block}
+.btn-submit.loading .btn-text{display:none}
+
+/* ═══ FOOTER ═══ */
+footer{
+  text-align:center;padding:2rem;color:var(--muted);font-size:.82rem;
+  border-top:1px solid var(--border);position:relative;z-index:1;
+}
+footer span{color:var(--accent2)}
+
+/* ═══ FADE-IN ANIMATION ═══ */
+.fade-up{opacity:0;transform:translateY(28px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.fade-up.visible{opacity:1;transform:none}
+</style>
 </head>
 <body>
-    <!-- NAVIGATION & HEADER -->
-    <header class="navbar">
-        <div class="nav-container">
-            <div class="logo">
-                <span class="logo-icon">⚖️</span>
-                <span class="logo-text">HealthAlign</span>
-            </div>
-            <nav class="nav-links">
-                <a href="#" class="nav-link active">Assessment</a>
-                <a href="/analysis" class="nav-link">Analysis</a>
-                <button class="theme-toggle" id="themeToggle">
-                    <span>🌙</span>
-                </button>
-            </nav>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo"><span>⚖️</span> HealthAlign</div>
+  <div class="nav-right">
+    <a href="/" class="nav-link active">Assessment</a>
+    <a href="/analysis" class="nav-link">Analysis</a>
+    <button class="theme-btn" id="themeBtn">🌙 Dark</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">UCI Machine Learning Dataset</div>
+  <h1 class="hero-title">Understand your body.<br><span class="gr">Start here.</span></h1>
+  <p class="hero-sub">Answer a few questions about your lifestyle and habits — we'll predict your health risk profile and give you a personalized action plan.</p>
+
+  <!-- SCALE -->
+  <div class="scale-wrap" id="scaleWrap" title="Press and hold to increase weight">
+    <svg class="scale-svg" viewBox="0 0 220 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- base -->
+      <ellipse cx="110" cy="260" rx="92" ry="14" fill="rgba(124,58,237,0.18)"/>
+      <!-- body -->
+      <rect x="22" y="200" width="176" height="60" rx="16" fill="url(#bodyGrad)"/>
+      <!-- dial face -->
+      <circle cx="110" cy="130" r="82" fill="url(#dialBg)" stroke="rgba(255,255,255,0.06)" stroke-width="2"/>
+      <circle cx="110" cy="130" r="70" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="8"/>
+      <!-- tick marks -->
+      <g stroke="rgba(255,255,255,0.2)" stroke-width="1.5">
+        <line x1="110" y1="62" x2="110" y2="72"/>
+        <line x1="110" y1="62" x2="110" y2="72" transform="rotate(30 110 130)"/>
+        <line x1="110" y1="62" x2="110" y2="72" transform="rotate(60 110 130)"/>
+        <line x1="110" y1="62" x2="110" y2="72" transform="rotate(90 110 130)"/>
+        <line x1="110" y1="62" x2="110" y2="72" transform="rotate(120 110 130)"/>
+        <line x1="110" y1="62" x2="110" y2="72" transform="rotate(150 110 130)"/>
+        <line x1="110" y1="62" x2="110" y2="72" transform="rotate(180 110 130)"/>
+        <line x1="110" y1="62" x2="110" y2="72" transform="rotate(210 110 130)"/>
+        <line x1="110" y1="62" x2="110" y2="72" transform="rotate(240 110 130)"/>
+        <line x1="110" y1="62" x2="110" y2="72" transform="rotate(270 110 130)"/>
+        <line x1="110" y1="62" x2="110" y2="72" transform="rotate(300 110 130)"/>
+        <line x1="110" y1="62" x2="110" y2="72" transform="rotate(330 110 130)"/>
+      </g>
+      <!-- arc colour bands -->
+      <path d="M 44 162 A 70 70 0 0 1 80 65" stroke="#34d399" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M 80 65 A 70 70 0 0 1 140 65" stroke="#fbbf24" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M 140 65 A 70 70 0 0 1 176 162" stroke="#f87171" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <!-- needle group — animated -->
+      <g id="scaleNeedle" class="needle-pivot">
+        <line x1="110" y1="130" x2="110" y2="68" stroke="url(#needleGrad)" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="110" cy="130" r="6" fill="#a78bfa"/>
+        <circle cx="110" cy="130" r="3" fill="#fff"/>
+      </g>
+      <!-- display window on body -->
+      <rect x="68" y="212" width="84" height="36" rx="8" fill="rgba(0,0,0,0.4)"/>
+      <!-- platform -->
+      <rect x="30" y="192" width="160" height="16" rx="8" fill="url(#platGrad)"/>
+
+      <defs>
+        <linearGradient id="bodyGrad" x1="22" y1="200" x2="198" y2="260" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#1c1035"/>
+          <stop offset="100%" stop-color="#0d0f1c"/>
+        </linearGradient>
+        <radialGradient id="dialBg" cx="50%" cy="50%">
+          <stop offset="0%" stop-color="#1a1240"/>
+          <stop offset="100%" stop-color="#08090e"/>
+        </radialGradient>
+        <linearGradient id="needleGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#a78bfa"/>
+          <stop offset="100%" stop-color="#7c3aed"/>
+        </linearGradient>
+        <linearGradient id="platGrad" x1="30" y1="192" x2="190" y2="192" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#2d1b69"/>
+          <stop offset="100%" stop-color="#0d0f1c"/>
+        </linearGradient>
+      </defs>
+    </svg>
+    <div class="scale-readout">
+      <span class="scale-kg" id="scaleKg">0</span>
+      <span class="scale-unit">KG</span>
+    </div>
+    <div class="scale-glow"></div>
+  </div>
+  <div class="scale-hint">Hold to increase — enter your real weight below</div>
+
+  <!-- progress dots -->
+  <div class="progress-wrap">
+    <div class="prog-step active" id="p1"></div>
+    <div class="prog-step" id="p2"></div>
+    <div class="prog-step" id="p3"></div>
+    <div class="prog-step" id="p4"></div>
+    <div class="prog-step" id="p5"></div>
+  </div>
+</section>
+
+<!-- FORM -->
+<div class="form-outer">
+  <form id="mainForm">
+
+    <!-- SECTION 1: WHO ARE YOU -->
+    <div class="card fade-up" data-step="1">
+      <div class="card-label">👤 About You</div>
+      <div class="row2">
+        <div class="field">
+          <div class="field-q"><span class="emoji">🧬</span>What is your gender?</div>
+          <div class="sel-wrap">
+            <select name="Gender" required>
+              <option value="">Select gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
         </div>
-    </header>
+        <div class="field">
+          <div class="field-q"><span class="emoji">🎂</span>How old are you?</div>
+          <input class="plain-input" type="number" name="Age" min="5" max="120" placeholder="e.g. 28" required/>
+        </div>
+      </div>
+    </div>
 
-    <!-- MAIN CONTAINER -->
-    <main class="container">
-        <!-- SECTION 1: ANIMATED SCALE INTRO -->
-        <section class="intro-section" id="introSection">
-            <div class="scale-container">
-                <div class="scale">
-                    <div class="scale-display">
-                        <span class="scale-value" id="scaleValue">0</span>
-                        <span class="scale-unit">kg</span>
-                    </div>
-                    <div class="scale-plate">
-                        <div class="scale-plate-inner"></div>
-                    </div>
-                    <div class="scale-base">
-                        <div class="scale-base-left"></div>
-                        <div class="scale-base-right"></div>
-                    </div>
-                </div>
-                <p class="intro-text">Discover your health status and get personalized recommendations</p>
+    <!-- SECTION 2: BODY STATS -->
+    <div class="card fade-up" data-step="2">
+      <div class="card-label">📐 Body Measurements</div>
+      <div class="row2">
+        <div class="field">
+          <div class="field-q"><span class="emoji">📏</span>How tall are you?</div>
+          <div class="num-unit-wrap">
+            <input type="number" id="heightVal" name="Height" min="0.5" max="9 " step="0.01" placeholder="Enter height" required/>
+            <div class="unit-toggle">
+              <input type="radio" name="height_unit" id="hm" value="m" checked/>
+              <label for="hm">m</label>
+              <input type="radio" name="height_unit" id="hft" value="ft"/>
+              <label for="hft">ft</label>
             </div>
-        </section>
-
-        <!-- SECTION 2: ASSESSMENT FORM -->
-        <section class="assessment-section" id="assessmentSection">
-            <h2 class="section-title">Health & Lifestyle Assessment</h2>
-            <p class="section-subtitle">Answer these questions about your health and lifestyle</p>
-
-            <form id="assessmentForm" class="form-grid">
-                <!-- Row 1: Basic Info -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="gender" class="form-label">What is your gender?</label>
-                        <div class="select-wrapper">
-                            <select id="gender" name="gender" required>
-                                <option value="">Select your gender</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                            </select>
-                            <span class="select-icon">▼</span>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="age" class="form-label">How old are you?</label>
-                        <div class="input-wrapper">
-                            <input type="number" id="age" name="age" min="1" max="120" placeholder="Enter your age" required>
-                            <span class="input-unit">years</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Row 2: Physical Measurements -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="height" class="form-label">How tall are you?</label>
-                        <div class="input-wrapper">
-                            <input type="number" id="height" name="height" min="0.5" max="3" step="0.01" placeholder="Enter height" required>
-                            <span class="input-unit">meters</span>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="weight" class="form-label">What is your weight?</label>
-                        <div class="input-wrapper">
-                            <input type="number" id="weight" name="weight" min="20" max="300" step="0.1" placeholder="Enter weight" required>
-                            <span class="input-unit">kg</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Row 3: Family History -->
-                <div class="form-row">
-                    <div class="form-group full-width">
-                        <label for="familyHistory" class="form-label">Does your family have a history of being overweight?</label>
-                        <div class="toggle-group">
-                            <input type="radio" id="familyYes" name="family_history_with_overweight" value="yes" required>
-                            <label for="familyYes" class="toggle-label">Yes</label>
-                            
-                            <input type="radio" id="familyNo" name="family_history_with_overweight" value="no" required>
-                            <label for="familyNo" class="toggle-label">No</label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Row 4: Dietary Habits -->
-                <div class="form-section-title">Dietary Habits</div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="FAVC" class="form-label">Do you eat high-calorie food frequently?</label>
-                        <div class="toggle-group">
-                            <input type="radio" id="FAVC_yes" name="FAVC" value="yes" required>
-                            <label for="FAVC_yes" class="toggle-label">Yes</label>
-                            
-                            <input type="radio" id="FAVC_no" name="FAVC" value="no" required>
-                            <label for="FAVC_no" class="toggle-label">No</label>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="FCVC" class="form-label">How often do you consume vegetables?</label>
-                        <div class="input-wrapper">
-                            <input type="range" id="FCVC" name="FCVC" min="0" max="5" step="0.5" value="2.5" class="range-slider">
-                            <div class="range-labels">
-                                <span>Never</span>
-                                <span id="FCVCValue" class="range-value">2.5x</span>
-                                <span>Always</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="NCP" class="form-label">How many main meals do you eat daily?</label>
-                        <div class="input-wrapper">
-                            <input type="number" id="NCP" name="NCP" min="1" max="5" step="0.1" placeholder="e.g., 3" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="CAEC" class="form-label">Do you eat food between meals?</label>
-                        <div class="select-wrapper">
-                            <select id="CAEC" name="CAEC" required>
-                                <option value="">Select frequency</option>
-                                <option value="no">No</option>
-                                <option value="sometimes">Sometimes</option>
-                                <option value="frequently">Frequently</option>
-                                <option value="always">Always</option>
-                            </select>
-                            <span class="select-icon">▼</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="CH2O" class="form-label">How much water do you drink daily?</label>
-                        <div class="input-wrapper">
-                            <input type="number" id="CH2O" name="CH2O" min="0" max="10" step="0.1" placeholder="Liters per day" required>
-                            <span class="input-unit">liters</span>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="CALC" class="form-label">How often do you drink alcohol?</label>
-                        <div class="select-wrapper">
-                            <select id="CALC" name="CALC" required>
-                                <option value="">Select frequency</option>
-                                <option value="no">No</option>
-                                <option value="sometimes">Sometimes</option>
-                                <option value="frequently">Frequently</option>
-                                <option value="always">Always</option>
-                            </select>
-                            <span class="select-icon">▼</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Row 5: Lifestyle Habits -->
-                <div class="form-section-title">Lifestyle Habits</div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="SMOKE" class="form-label">Do you smoke?</label>
-                        <div class="toggle-group">
-                            <input type="radio" id="SMOKE_yes" name="SMOKE" value="yes" required>
-                            <label for="SMOKE_yes" class="toggle-label">Yes</label>
-                            
-                            <input type="radio" id="SMOKE_no" name="SMOKE" value="no" required>
-                            <label for="SMOKE_no" class="toggle-label">No</label>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="SCC" class="form-label">Do you monitor the calories you eat?</label>
-                        <div class="toggle-group">
-                            <input type="radio" id="SCC_yes" name="SCC" value="yes" required>
-                            <label for="SCC_yes" class="toggle-label">Yes</label>
-                            
-                            <input type="radio" id="SCC_no" name="SCC" value="no" required>
-                            <label for="SCC_no" class="toggle-label">No</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="FAF" class="form-label">How often do you exercise?</label>
-                        <div class="input-wrapper">
-                            <input type="number" id="FAF" name="FAF" min="0" max="10" step="0.5" placeholder="Days per week" required>
-                            <span class="input-unit">days/week</span>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="TUE" class="form-label">How much time do you use technology daily?</label>
-                        <div class="input-wrapper">
-                            <input type="number" id="TUE" name="TUE" min="0" max="16" step="0.5" placeholder="Hours per day" required>
-                            <span class="input-unit">hours</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group full-width">
-                        <label for="MTRANS" class="form-label">What is your primary mode of transportation?</label>
-                        <div class="select-wrapper">
-                            <select id="MTRANS" name="MTRANS" required>
-                                <option value="">Select transportation</option>
-                                <option value="Automobile">Automobile</option>
-                                <option value="Bike">Bike</option>
-                                <option value="Motorbike">Motorbike</option>
-                                <option value="Public_Transportation">Public Transportation</option>
-                                <option value="Walking">Walking</option>
-                            </select>
-                            <span class="select-icon">▼</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Submit Button -->
-                <div class="form-row">
-                    <button type="submit" class="btn-submit" id="submitBtn">
-                        <span class="btn-text">Get Your Assessment</span>
-                        <span class="btn-loader" style="display: none;">
-                            <span class="spinner"></span>
-                        </span>
-                    </button>
-                </div>
-            </form>
-        </section>
-
-        <!-- SECTION 3: RESULTS -->
-        <section class="results-section" id="resultsSection" style="display: none;">
-            <div class="results-container">
-                <!-- Result Card -->
-                <div class="result-card" id="resultCard">
-                    <div class="result-header">
-                        <h3 class="result-title" id="resultTitle"></h3>
-                        <span class="result-risk" id="resultRisk"></span>
-                    </div>
-                    
-                    <div class="result-body">
-                        <p class="result-message" id="resultMessage"></p>
-                        
-                        <div class="bmi-display">
-                            <div class="bmi-item">
-                                <span class="bmi-label">Your BMI</span>
-                                <span class="bmi-value" id="bmiValue">0.0</span>
-                            </div>
-                            <div class="bmi-item">
-                                <span class="bmi-label">Weight Status</span>
-                                <span class="bmi-status" id="bmiStatus">Normal</span>
-                            </div>
-                        </div>
-
-                        <!-- Probability Chart -->
-                        <div class="probability-chart">
-                            <h4 class="chart-title">Prediction Confidence</h4>
-                            <div class="bars-container" id="probabilityBars"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recommendations Section -->
-                <div class="recommendations-section">
-                    <h3 class="recommendations-title">Your Personalized Recommendations</h3>
-                    <div class="recommendations-container" id="recommendationsContainer"></div>
-                </div>
+          </div>
+          <span id="heightHint" style="font-size:.75rem;color:var(--muted);margin-top:.3rem">Enter in metres (e.g. 1.75)</span>
+        </div>
+        <div class="field">
+          <div class="field-q"><span class="emoji">⚖️</span>What do you weigh?</div>
+          <div class="num-unit-wrap">
+            <input type="number" id="weightVal" name="Weight" min="20" max="999" step="0.1" placeholder="Enter weight" required/>
+            <div class="unit-toggle">
+              <input type="radio" name="weight_unit" id="wkg" value="kg" checked/>
+              <label for="wkg">kg</label>
+              <input type="radio" name="weight_unit" id="wlbs" value="lbs"/>
+              <label for="wlbs">lbs</label>
             </div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:1.5rem">
+        <div class="field">
+          <div class="field-q"><span class="emoji">🧬</span>Does anyone in your family have a history of being overweight?</div>
+          <div class="chips">
+            <input class="chip-in" type="radio" name="family_history_with_overweight" id="fhY" value="yes" required/>
+            <label class="chip-lbl" for="fhY">Yes, close family members</label>
+            <input class="chip-in" type="radio" name="family_history_with_overweight" id="fhN" value="no"/>
+            <label class="chip-lbl" for="fhN">No history</label>
+          </div>
+        </div>
+      </div>
+    </div>
 
-            <div class="action-buttons">
-                <button class="btn-secondary" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
-                    Modify Assessment
-                </button>
-                <a href="/analysis" class="btn-primary">
-                    View Analysis
-                </a>
-            </div>
-        </section>
+    <!-- SECTION 3: FOOD HABITS -->
+    <div class="card fade-up" data-step="3">
+      <div class="card-label">🍽️ Eating Habits</div>
 
-        <!-- QUOTE SECTION -->
-        <section class="quote-section">
-            <div class="quote-card">
-                <p class="quote-text" id="quoteText">"Health is a state of complete physical, mental and social well-being, not merely the absence of disease or infirmity." - WHO</p>
-            </div>
-        </section>
-    </main>
+      <div class="field" style="margin-bottom:1.4rem">
+        <div class="field-q"><span class="emoji">🍔</span>Do you regularly eat high-calorie foods (fast food, fried items, sugary snacks)?</div>
+        <div class="chips" style="margin-top:.5rem">
+          <input class="chip-in" type="radio" name="FAVC" id="favcY" value="yes" required/>
+          <label class="chip-lbl" for="favcY">Yes, fairly often</label>
+          <input class="chip-in" type="radio" name="FAVC" id="favcN" value="no"/>
+          <label class="chip-lbl" for="favcN">No, I avoid them</label>
+        </div>
+      </div>
 
-    <!-- FOOTER -->
-    <footer class="footer">
-        <p>&copy; 2024 HealthAlign Assessment Tool</p>
-        <p>Dataset: <span>Obesity Database from UCI Machine Learning Repository</span></p>
-        <p class="disclaimer">Disclaimer: This tool is for informational purposes only and should not replace professional medical advice. Please consult with a healthcare provider for personalized guidance.</p>
-    </footer>
+      <div class="field" style="margin-bottom:1.4rem">
+        <div class="field-q"><span class="emoji">🥗</span>How often do you eat vegetables?</div>
+        <div class="range-field">
+          <div class="range-row">
+            <input type="range" name="FCVC" id="fcvcR" min="1" max="3" step="0.5" value="2"/>
+            <span class="range-val" id="fcvcV">2</span>
+          </div>
+          <div class="range-labels"><span>Rarely</span><span>Sometimes</span><span>Daily</span></div>
+        </div>
+      </div>
 
-    <!-- SCRIPTS -->
-    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/animations.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/form.js') }}"></script>
+      <div class="row2">
+        <div class="field">
+          <div class="field-q"><span class="emoji">🍳</span>How many proper meals do you eat per day?</div>
+          <input class="plain-input" type="number" name="NCP" min="1" max="10" step="0.5" placeholder="e.g. 3" required/>
+        </div>
+        <div class="field">
+          <div class="field-q"><span class="emoji">🍿</span>Do you snack between meals?</div>
+          <div class="sel-wrap">
+            <select name="CAEC" required>
+              <option value="">Select frequency</option>
+              <option value="no">No, never</option>
+              <option value="sometimes">Sometimes</option>
+              <option value="frequently">Frequently</option>
+              <option value="always">Always</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="row2" style="margin-top:1.4rem">
+        <div class="field">
+          <div class="field-q"><span class="emoji">💧</span>How much water do you drink each day? (litres)</div>
+          <input class="plain-input" type="number" name="CH2O" min="0" max="10" step="0.1" placeholder="e.g. 2.5" required/>
+        </div>
+        <div class="field">
+          <div class="field-q"><span class="emoji">🍷</span>How often do you drink alcohol?</div>
+          <div class="sel-wrap">
+            <select name="CALC" required>
+              <option value="">Select frequency</option>
+              <option value="no">I don't drink</option>
+              <option value="sometimes">Occasionally</option>
+              <option value="frequently">Frequently</option>
+              <option value="always">Daily</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 4: LIFESTYLE -->
+    <div class="card fade-up" data-step="4">
+      <div class="card-label">🏃 Lifestyle & Activity</div>
+
+      <div class="row2" style="margin-bottom:1.4rem">
+        <div class="field">
+          <div class="field-q"><span class="emoji">🚭</span>Do you smoke?</div>
+          <div class="chips">
+            <input class="chip-in" type="radio" name="SMOKE" id="smkY" value="yes" required/>
+            <label class="chip-lbl" for="smkY">Yes</label>
+            <input class="chip-in" type="radio" name="SMOKE" id="smkN" value="no"/>
+            <label class="chip-lbl" for="smkN">No</label>
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-q"><span class="emoji">📊</span>Do you track the calories you eat?</div>
+          <div class="chips">
+            <input class="chip-in" type="radio" name="SCC" id="sccY" value="yes" required/>
+            <label class="chip-lbl" for="sccY">Yes, I track</label>
+            <input class="chip-in" type="radio" name="SCC" id="sccN" value="no"/>
+            <label class="chip-lbl" for="sccN">No, I don't</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:1.4rem">
+        <div class="field-q"><span class="emoji">🏋️</span>How many days per week do you exercise or do physical activity?</div>
+        <div class="range-field">
+          <div class="range-row">
+            <input type="range" name="FAF" id="fafR" min="0" max="7" step="0.5" value="2"/>
+            <span class="range-val" id="fafV">2</span>
+          </div>
+          <div class="range-labels"><span>0 days</span><span>3–4</span><span>7 days</span></div>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:1.4rem">
+        <div class="field-q"><span class="emoji">📱</span>How many hours a day do you spend on screens (phone, computer, TV)?</div>
+        <div class="range-field">
+          <div class="range-row">
+            <input type="range" name="TUE" id="tueR" min="0" max="12" step="0.5" value="3"/>
+            <span class="range-val" id="tueV">3</span>
+          </div>
+          <div class="range-labels"><span>0 hrs</span><span>6 hrs</span><span>12+ hrs</span></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-q"><span class="emoji">🚗</span>What is your primary mode of getting around?</div>
+        <div class="sel-wrap">
+          <select name="MTRANS" required>
+            <option value="">Choose transport</option>
+            <option value="Automobile">Car / Automobile</option>
+            <option value="Motorbike">Motorbike / Scooter</option>
+            <option value="Bike">Bicycle</option>
+            <option value="Public_Transportation">Public Transport</option>
+            <option value="Walking">I mostly walk</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBMIT -->
+    <div class="submit-wrap fade-up">
+      <button type="submit" class="btn-submit" id="submitBtn">
+        <div class="spin" id="btnSpin"></div>
+        <span class="btn-text">Get My Health Assessment →</span>
+      </button>
+      <p style="margin-top:1rem;font-size:.78rem;color:var(--muted)">
+        For educational purposes only. Not medical advice.
+      </p>
+    </div>
+
+  </form>
+</div>
+
+<footer>
+  <p>Dataset: <span>Obesity Levels — UCI Machine Learning Repository</span></p>
+  <p style="margin-top:.4rem">This tool is for informational purposes only. Always consult a healthcare professional.</p>
+</footer>
+
+<script>
+/* ── THEME ── */
+const root = document.documentElement;
+const themeBtn = document.getElementById('themeBtn');
+let dark = localStorage.getItem('theme') !== 'light';
+function applyTheme(d){
+  root.setAttribute('data-theme', d ? 'dark' : 'light');
+  themeBtn.textContent = d ? '☀️ Light' : '🌙 Dark';
+  localStorage.setItem('theme', d ? 'dark' : 'light');
+}
+applyTheme(dark);
+themeBtn.addEventListener('click', () => { dark = !dark; applyTheme(dark); });
+
+/* ── SCALE ANIMATION ── */
+const scaleKg = document.getElementById('scaleKg');
+const needle  = document.getElementById('scaleNeedle');
+const weightInput = document.querySelector('input[name="Weight"]');
+let scaleVal = 0, pressTimer = null, pressInterval = null;
+
+function setScale(v) {
+  scaleVal = Math.min(200, Math.max(0, v));
+  scaleKg.textContent = Math.round(scaleVal);
+  // rotate needle -90 to +90 deg mapped to 0-200kg
+  const deg = -90 + (scaleVal / 200) * 180;
+  needle.style.transform = `rotate(${deg}deg)`;
+}
+
+const wrap = document.getElementById('scaleWrap');
+wrap.addEventListener('mousedown', startPress);
+wrap.addEventListener('touchstart', startPress, {passive:true});
+wrap.addEventListener('mouseup', stopPress);
+wrap.addEventListener('mouseleave', stopPress);
+wrap.addEventListener('touchend', stopPress);
+
+function startPress(e) {
+  pressTimer = setTimeout(() => {
+    pressInterval = setInterval(() => { setScale(scaleVal + 2); }, 60);
+  }, 300);
+}
+function stopPress() {
+  clearTimeout(pressTimer);
+  clearInterval(pressInterval);
+}
+
+// sync with weight input
+weightInput.addEventListener('input', function(){
+  let v = parseFloat(this.value)||0;
+  const unit = document.querySelector('input[name="weight_unit"]:checked')?.value;
+  if(unit === 'lbs') v = v * 0.453592;
+  setScale(v);
+});
+document.querySelectorAll('input[name="weight_unit"]').forEach(r => r.addEventListener('change', () => {
+  weightInput.dispatchEvent(new Event('input'));
+}));
+setScale(0);
+
+/* ── HEIGHT HINT ── */
+document.querySelectorAll('input[name="height_unit"]').forEach(r => {
+  r.addEventListener('change', function(){
+    const hint = document.getElementById('heightHint');
+    const hi = document.getElementById('heightVal');
+    if(this.value === 'ft'){
+      hint.textContent = 'Enter in feet (e.g. 5.9)';
+      hi.setAttribute('placeholder','e.g. 5.9');
+      hi.setAttribute('max','9');
+      hi.setAttribute('min','1');
+    } else {
+      hint.textContent = 'Enter in metres (e.g. 1.75)';
+      hi.setAttribute('placeholder','e.g. 1.75');
+      hi.setAttribute('max','3');
+      hi.setAttribute('min','0.5');
+    }
+  });
+});
+
+/* ── RANGE LABELS ── */
+[['fcvcR','fcvcV'],['fafR','fafV'],['tueR','tueV']].forEach(([id,vid]) => {
+  const r = document.getElementById(id), v = document.getElementById(vid);
+  if(!r||!v) return;
+  function upd(){ v.textContent = parseFloat(r.value).toFixed(r.step==='.5'?1:0); updateTrack(r); }
+  r.addEventListener('input', upd); upd();
+});
+
+function updateTrack(r){
+  const pct = (r.value - r.min)/(r.max - r.min)*100;
+  r.style.background = `linear-gradient(to right,#7c3aed ${pct}%,var(--border) ${pct}%)`;
+}
+document.querySelectorAll('input[type=range]').forEach(updateTrack);
+
+/* ── PROGRESS STEPS ── */
+const stepMap = [[1,'p1'],[2,'p2'],[3,'p3'],[4,'p4']];
+function updateProgress(){
+  const cards = document.querySelectorAll('.card[data-step]');
+  let done = 0;
+  cards.forEach(c => {
+    const step = parseInt(c.dataset.step);
+    const inputs = c.querySelectorAll('input:required, select:required');
+    let filled = true;
+    inputs.forEach(i => {
+      if(i.type === 'radio'){
+        const grp = c.querySelectorAll(`input[name="${i.name}"]`);
+        const chk = [...grp].some(r=>r.checked);
+        if(!chk) filled = false;
+      } else if(!i.value.trim()) filled = false;
+    });
+    const dot = document.getElementById('p'+step);
+    if(dot){ dot.className = 'prog-step' + (filled?' done':step===1?' active':''); }
+    if(filled) done++;
+  });
+}
+document.getElementById('mainForm').addEventListener('input', updateProgress);
+updateProgress();
+
+/* ── SCROLL FADE-IN ── */
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+},{threshold:0.1});
+document.querySelectorAll('.fade-up').forEach(el => io.observe(el));
+
+/* ── FORM SUBMIT ── */
+document.getElementById('mainForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  btn.classList.add('loading');
+
+  const fd = new FormData(this);
+  const payload = Object.fromEntries(fd.entries());
+
+  try {
+    const res = await fetch('/api/predict', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if(data.success){
+      sessionStorage.setItem('healthResult', JSON.stringify(data));
+      window.location.href = '/results';
+    } else {
+      alert('Something went wrong: ' + (data.error || 'Unknown error'));
+    }
+  } catch(err){
+    alert('Network error. Please try again.');
+  } finally {
+    btn.classList.remove('loading');
+  }
+});
+</script>
 </body>
 </html>
