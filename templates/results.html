@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Your Results — HealthAlign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#07080f;--bg2:#0d0f1c;--bg3:#131628;
+  --surface:rgba(255,255,255,0.04);--surface2:rgba(255,255,255,0.07);
+  --border:rgba(255,255,255,0.08);
+  --text:#e8eaf0;--muted:rgba(232,234,240,0.5);
+  --accent:#7c3aed;--accent2:#06b6d4;--rose:#f43f5e;--gold:#f59e0b;--green:#10b981;
+  --glow-v:rgba(124,58,237,0.3);--glow-c:rgba(6,182,212,0.2);
+  --r:16px;--r2:24px;--r3:12px;
+  --ease:cubic-bezier(0.16,1,0.3,1);
+  --font-head:'Syne',sans-serif;--font-body:'Inter',sans-serif;
+}
+[data-theme="light"]{
+  --bg:#f0f2ff;--bg2:#e8eaff;--bg3:#dde0ff;
+  --surface:rgba(255,255,255,0.7);--surface2:rgba(255,255,255,0.9);
+  --border:rgba(100,80,200,0.15);--text:#1a1030;--muted:rgba(26,16,48,0.55);
+  --glow-v:rgba(124,58,237,0.1);--glow-c:rgba(6,182,212,0.08);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:background .4s,color .4s}
+.orb{position:fixed;pointer-events:none;border-radius:50%;filter:blur(90px);animation:orbFloat 14s ease-in-out infinite;z-index:0}
+.orb1{width:500px;height:500px;background:var(--glow-v);top:-150px;right:-100px;animation-delay:0s}
+.orb2{width:400px;height:400px;background:var(--glow-c);bottom:-100px;left:-100px;animation-delay:-6s}
+@keyframes orbFloat{0%,100%{transform:translate(0,0)}50%{transform:translate(25px,-35px)}}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:100;display:flex;justify-content:space-between;align-items:center;padding:.9rem 2.5rem;background:rgba(7,8,15,0.7);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);transition:background .4s}
+[data-theme="light"] .nav{background:rgba(240,242,255,0.75)}
+.nav-logo{font-family:var(--font-head);font-weight:800;font-size:1.35rem;background:linear-gradient(135deg,#a78bfa,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:flex;align-items:center;gap:.5rem}
+.nav-logo span{font-size:1.5rem;-webkit-text-fill-color:initial}
+.nav-right{display:flex;gap:.8rem;align-items:center}
+.nav-link{color:var(--muted);text-decoration:none;font-size:.88rem;font-weight:500;padding:.4rem .9rem;border-radius:99px;transition:all .25s}
+.nav-link:hover{color:var(--text);background:var(--surface2)}
+.theme-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:99px;padding:.4rem .9rem;font-size:.84rem;cursor:pointer;transition:all .3s;font-family:var(--font-body)}
+.theme-btn:hover{box-shadow:0 0 16px var(--glow-v)}
+
+/* LAYOUT */
+.page{max-width:920px;margin:0 auto;padding:3rem 1.5rem 5rem;position:relative;z-index:1}
+
+/* HERO RESULT */
+.result-hero{
+  text-align:center;padding:3.5rem 2rem 3rem;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:28px;margin-bottom:2rem;
+  backdrop-filter:blur(16px);position:relative;overflow:hidden;
+}
+.result-hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,var(--result-glow,rgba(124,58,237,.2)) 0%,transparent 70%);
+  pointer-events:none;
+}
+.result-emoji{font-size:4rem;display:block;margin-bottom:1rem;animation:popIn .6s var(--ease) both}
+@keyframes popIn{from{transform:scale(0.4);opacity:0}to{transform:scale(1);opacity:1}}
+.result-level{
+  font-family:var(--font-head);font-weight:800;
+  font-size:clamp(2rem,5vw,3.2rem);line-height:1.1;
+  margin-bottom:.6rem;
+}
+.result-risk{
+  display:inline-block;padding:.35rem 1.1rem;
+  border-radius:99px;font-size:.82rem;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;
+  margin-bottom:1.2rem;
+  border:1px solid var(--result-color,var(--accent));
+  color:var(--result-color,var(--accent));
+  background:rgba(from var(--result-color) r g b / 0.1);
+}
+.result-bmi-row{
+  display:flex;gap:2rem;justify-content:center;
+  flex-wrap:wrap;margin-bottom:1.5rem;
+}
+.bmi-pill{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--r);padding:.9rem 1.6rem;text-align:center;
+  min-width:120px;
+}
+.bmi-num{font-family:var(--font-head);font-weight:800;font-size:1.8rem;background:linear-gradient(135deg,#a78bfa,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.bmi-lab{font-size:.75rem;color:var(--muted);margin-top:.2rem;letter-spacing:.05em;text-transform:uppercase}
+.result-verdict{
+  font-size:1.05rem;color:var(--muted);line-height:1.75;
+  max-width:600px;margin:0 auto;font-weight:400;
+}
+
+/* CONFIDENCE CHART */
+.conf-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:1.8rem 2rem;margin-bottom:2rem;backdrop-filter:blur(12px)}
+.sec-title{font-family:var(--font-head);font-weight:700;font-size:1.15rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:.6rem}
+.sec-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+.bars{display:flex;flex-direction:column;gap:.75rem}
+.bar-row{display:grid;grid-template-columns:180px 1fr 54px;align-items:center;gap:.8rem}
+@media(max-width:560px){.bar-row{grid-template-columns:120px 1fr 44px}}
+.bar-name{font-size:.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{height:8px;background:var(--border);border-radius:99px;overflow:hidden}
+.bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0;transition:width 1s var(--ease)}
+.bar-fill.high{background:linear-gradient(90deg,#a78bfa,#38bdf8)}
+.bar-pct{font-size:.82rem;font-weight:700;color:var(--accent2);text-align:right}
+
+/* RECOMMENDATIONS */
+.recs-section{margin-bottom:2rem}
+.recs-intro{font-size:.95rem;color:var(--muted);line-height:1.7;margin-bottom:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem 1.5rem;backdrop-filter:blur(12px)}
+.recs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:1.2rem}
+@media(max-width:600px){.recs-grid{grid-template-columns:1fr}}
+
+.rec-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r2);padding:1.5rem 1.6rem;
+  backdrop-filter:blur(12px);
+  transition:border-color .3s,box-shadow .3s,transform .3s var(--ease);
+  opacity:0;transform:translateY(20px);
+}
+.rec-card.visible{opacity:1;transform:none}
+.rec-card:hover{border-color:rgba(124,58,237,.4);box-shadow:0 0 32px var(--glow-v);transform:translateY(-3px)}
+.rec-header{display:flex;align-items:flex-start;gap:.9rem;margin-bottom:1rem}
+.rec-icon{font-size:1.8rem;flex-shrink:0;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:var(--bg3);border-radius:12px}
+.rec-title{font-family:var(--font-head);font-weight:700;font-size:1rem;line-height:1.3;color:var(--text)}
+.rec-steps{list-style:none;display:flex;flex-direction:column;gap:.6rem}
+.rec-steps li{
+  font-size:.87rem;color:var(--muted);line-height:1.6;
+  padding-left:1.2rem;position:relative;
+}
+.rec-steps li::before{
+  content:'→';position:absolute;left:0;
+  color:var(--accent2);font-size:.8rem;top:.05em;
+}
+
+/* LIFESTYLE TABLE */
+.lifestyle-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:1.8rem 2rem;margin-bottom:2rem;backdrop-filter:blur(12px)}
+.lf-table{width:100%;border-collapse:collapse;font-size:.88rem}
+.lf-table th{text-align:left;color:var(--muted);font-weight:600;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;padding:.5rem .8rem;border-bottom:1px solid var(--border)}
+.lf-table td{padding:.75rem .8rem;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--text);vertical-align:top}
+.lf-table tr:last-child td{border-bottom:none}
+.lf-table tr:hover td{background:var(--surface2)}
+.badge{display:inline-block;padding:.2rem .65rem;border-radius:99px;font-size:.72rem;font-weight:700;letter-spacing:.04em}
+.badge-good{background:rgba(16,185,129,.15);color:#34d399;border:1px solid rgba(16,185,129,.2)}
+.badge-warn{background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.2)}
+.badge-bad{background:rgba(244,63,94,.12);color:#f87171;border:1px solid rgba(244,63,94,.2)}
+
+/* OFFICIAL PLANS */
+.plans-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:1.8rem 2rem;margin-bottom:2rem;backdrop-filter:blur(12px)}
+.plans-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
+@media(max-width:640px){.plans-grid{grid-template-columns:1fr}}
+.plan-block{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:1.3rem 1.4rem}
+.plan-block h4{font-family:var(--font-head);font-weight:700;font-size:.95rem;margin-bottom:.9rem;display:flex;align-items:center;gap:.5rem;color:var(--text)}
+.plan-block ul{list-style:none;display:flex;flex-direction:column;gap:.55rem}
+.plan-block li{font-size:.84rem;color:var(--muted);padding-left:1.1rem;position:relative;line-height:1.55}
+.plan-block li::before{content:'•';position:absolute;left:0;color:var(--accent2)}
+
+/* ACTIONS */
+.actions{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;margin-top:2.5rem}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 2rem;border-radius:99px;font-size:.92rem;font-weight:700;font-family:var(--font-head);cursor:pointer;text-decoration:none;transition:all .3s var(--ease);border:none}
+.btn-primary{background:linear-gradient(135deg,#7c3aed,#06b6d4);color:#fff;box-shadow:0 6px 30px rgba(124,58,237,.4)}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(124,58,237,.55)}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--accent);box-shadow:0 0 20px var(--glow-v)}
+
+footer{text-align:center;padding:2rem;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border);position:relative;z-index:1}
+footer span{color:var(--accent2)}
+
+/* DISCLAIMER */
+.disclaimer{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);border-radius:var(--r);padding:1rem 1.3rem;font-size:.82rem;color:var(--muted);line-height:1.6;margin-bottom:2rem}
+.disclaimer strong{color:var(--gold)}
+
+/* no-data fallback */
+.no-data{text-align:center;padding:6rem 2rem;color:var(--muted)}
+.no-data h2{font-family:var(--font-head);margin-bottom:1rem;font-size:1.5rem;color:var(--text)}
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<nav class="nav">
+  <div class="nav-logo"><span>⚖️</span> HealthAlign</div>
+  <div class="nav-right">
+    <a href="/" class="nav-link">← Retake Assessment</a>
+    <a href="/analysis" class="nav-link">Analysis</a>
+    <button class="theme-btn" id="themeBtn">☀️ Light</button>
+  </div>
+</nav>
+
+<div class="page" id="pageContent">
+  <div class="no-data" id="noData" style="display:none">
+    <h2>No results found</h2>
+    <p>Please complete the assessment first.</p>
+    <br/>
+    <a href="/" class="btn btn-primary">Go to Assessment</a>
+  </div>
+  <!-- content injected by JS -->
+</div>
+
+<footer>
+  <p>Dataset: <span>Obesity Levels — UCI Machine Learning Repository</span></p>
+  <p style="margin-top:.4rem">This tool is for informational purposes only. Consult a qualified healthcare professional for medical advice.</p>
+</footer>
+
+<script>
+/* THEME */
+const root = document.documentElement;
+const themeBtn = document.getElementById('themeBtn');
+let dark = localStorage.getItem('theme') !== 'light';
+function applyTheme(d){ root.setAttribute('data-theme',d?'dark':'light'); themeBtn.textContent=d?'☀️ Light':'🌙 Dark'; localStorage.setItem('theme',d?'dark':'light'); }
+applyTheme(dark);
+themeBtn.addEventListener('click',()=>{dark=!dark;applyTheme(dark);});
+
+/* LOAD DATA */
+const raw = sessionStorage.getItem('healthResult');
+const page = document.getElementById('pageContent');
+
+if(!raw){
+  document.getElementById('noData').style.display='block';
+} else {
+  const D = JSON.parse(raw);
+  buildPage(D);
+}
+
+/* OBESITY LEVEL METADATA */
+const OB = {
+  0:{verdict:"Your weight is below the healthy range. While this may not seem alarming, being underweight can carry its own health risks — including weakened immunity, bone density loss, and nutritional deficiencies. It is worth speaking to a healthcare professional about reaching a healthy weight through a nourishing diet.",glow:"rgba(56,189,248,0.25)",textColor:"#38bdf8"},
+  1:{verdict:"Your results indicate a healthy weight range. This is a meaningful achievement and reflects positively on your daily habits. Maintaining this requires consistent effort — keep prioritising balanced nutrition, regular physical activity, and adequate sleep.",glow:"rgba(52,211,153,0.25)",textColor:"#34d399"},
+  2:{verdict:"Your results place you in the Overweight Level I category. This is a moderate signal from your body that some lifestyle adjustments would be beneficial. You are not far from the healthy range, and targeted changes to your diet and activity levels can make a significant difference.",glow:"rgba(251,191,36,0.25)",textColor:"#fbbf24"},
+  3:{verdict:"Your results indicate Overweight Level II. At this stage, the additional weight begins to place measurable strain on your cardiovascular system, joints, and metabolic function. A structured approach to nutrition and exercise, ideally with professional support, is strongly recommended.",glow:"rgba(249,115,22,0.2)",textColor:"#f97316"},
+  4:{verdict:"Your results reflect Obesity Type I. This classification carries elevated health risks including hypertension, type 2 diabetes, and sleep apnea. This is a serious but very manageable condition. Professional guidance from a physician or registered dietitian is strongly advised.",glow:"rgba(248,113,113,0.2)",textColor:"#f87171"},
+  5:{verdict:"Your results reflect Obesity Type II, which is associated with significantly elevated risk of serious health conditions. We urge you to consult with a qualified healthcare provider as a priority. The recommendations below are starting points, but professional medical supervision is essential.",glow:"rgba(239,68,68,0.2)",textColor:"#ef4444"},
+  6:{verdict:"Your results reflect Obesity Type III (also called severe or morbid obesity). This classification requires immediate and sustained medical attention. Please consult a physician as soon as possible. The lifestyle steps below may support your journey, but they must work alongside clinical care — not replace it.",glow:"rgba(220,38,38,0.2)",textColor:"#dc2626"},
+};
+
+/* PLAN DATA keyed by index */
+function getPlans(idx, userInputs){
+  // Diet plans from NHS, WHO, Academy of Nutrition and Dietetics guidelines
+  const plans = {
+    diet:[],lifestyle:[]
+  };
+
+  if(idx <= 1){
+    plans.diet = [
+      "Follow a balanced diet with all five food groups represented at every main meal.",
+      "Prioritise whole grains, lean proteins (chicken, fish, legumes), and healthy fats (avocado, nuts, olive oil).",
+      "Eat at regular intervals — breakfast, lunch, and dinner — to maintain stable blood sugar.",
+      "Include calcium-rich foods (dairy or fortified alternatives) and iron-rich foods for bone and energy health.",
+      "Limit ultra-processed snacks, but do not restrict calories unnecessarily.",
+    ];
+    plans.lifestyle = [
+      "Maintain your current exercise routine of at least 150 minutes of moderate activity weekly (NHS guidelines).",
+      "Prioritise 7 to 9 hours of quality sleep each night — sleep directly influences appetite hormones.",
+      "Manage stress through mindfulness, journalling, or social activity, as chronic stress affects weight.",
+      "Schedule annual health check-ups to track cholesterol, blood pressure, and blood glucose.",
+    ];
+  } else if(idx <= 3){
+    plans.diet = [
+      "Adopt a Mediterranean-style diet: vegetables, legumes, whole grains, fish, and olive oil (WHO-recommended for weight management).",
+      "Reduce portion sizes by 10 to 15 percent — use a smaller plate to make this feel natural.",
+      "Limit added sugars to under 25g per day (WHO 2023 guideline): cut soft drinks, biscuits, and flavoured yoghurts.",
+      "Include at least 400g of fruit and vegetables daily across your meals (WHO recommendation).",
+      "Prioritise protein at every meal (eggs, legumes, lean meat, Greek yoghurt) — it reduces hunger more than carbohydrates or fat.",
+      "Avoid eating within 2 hours of bedtime — late-night eating is associated with increased fat storage.",
+    ];
+    plans.lifestyle = [
+      "Target a daily deficit of 300 to 500 calories through a combination of diet and exercise — this achieves safe weight loss of 0.5 kg per week (NHS).",
+      "Begin with 30 minutes of brisk walking, 5 days a week, and increase intensity gradually.",
+      "Introduce strength training 2 days per week — muscle mass raises your resting metabolism.",
+      "Use the NHS Weight Loss Plan app or a registered dietitian for structured support.",
+      "Reduce screen-based sedentary time — break up sitting every 45 to 60 minutes.",
+      "Track your meals for at least 2 weeks to understand your true caloric intake.",
+    ];
+  } else {
+    plans.diet = [
+      "Consult a Registered Dietitian Nutritionist (RDN) for a personalised meal plan — self-directed restriction at this stage can be counterproductive.",
+      "Follow a structured low-calorie diet of 1,200 to 1,500 kcal per day (women) or 1,500 to 1,800 kcal (men) under medical supervision (Academy of Nutrition and Dietetics).",
+      "Eliminate liquid calories — sugary drinks, alcohol, and juice can account for 500+ kcal per day.",
+      "Eat protein at every meal: aim for 1.2 to 1.6g per kg of your target body weight daily.",
+      "Focus on volumetrics: high-fibre, high-water-content foods (soups, salads, vegetables) that fill you up with fewer calories.",
+      "Avoid fad diets — evidence consistently shows they cause short-term loss and long-term rebound (British Dietetic Association).",
+    ];
+    plans.lifestyle = [
+      "Seek a referral to a structured weight management programme such as NHS Tier 3 or equivalent in your region.",
+      "Start with low-impact exercise: swimming, cycling, or water aerobics reduce joint strain while burning calories.",
+      "Build to 300 minutes of moderate activity per week (WHO recommendation for obesity management).",
+      "Consider Cognitive Behavioural Therapy (CBT) for eating — emotional eating is a significant driver at this stage.",
+      "Monitor blood pressure, blood glucose, and cholesterol regularly with your GP.",
+      "Sleep apnea screening is recommended at this BMI level — poor sleep dramatically worsens obesity outcomes.",
+    ];
+  }
+  return plans;
+}
+
+function getBadge(val, type){
+  // Returns a badge string
+  const good = '<span class="badge badge-good">Good</span>';
+  const warn = '<span class="badge badge-warn">Improve</span>';
+  const bad  = '<span class="badge badge-bad">Concern</span>';
+  if(type==='favc') return val==='no'?good:warn;
+  if(type==='water') return parseFloat(val)>=2?good:(parseFloat(val)>=1?warn:bad);
+  if(type==='exercise') return parseFloat(val)>=3?good:(parseFloat(val)>=1?warn:bad);
+  if(type==='smoke') return val==='no'?good:bad;
+  if(type==='alcohol') return (val==='no'||val==='sometimes')?good:(val==='frequently'?warn:bad);
+  if(type==='screen') return parseFloat(val)<=3?good:(parseFloat(val)<=6?warn:bad);
+  if(type==='scc') return val==='yes'?good:warn;
+  return '';
+}
+
+function buildPage(D){
+  const idx = D.prediction.index;
+  const meta = OB[idx];
+  const recs = D.recommendations;
+  const probs = D.probabilities;
+  const bmi = D.bmi;
+  const u = D.user_inputs;
+  const plans = getPlans(idx, u);
+
+  // Set CSS var for glow on result hero
+  let html = '';
+
+  // ── HERO ──
+  html += `
+  <div class="result-hero" style="--result-glow:${meta.glow};--result-color:${D.prediction.color}">
+    <span class="result-emoji">${D.prediction.emoji}</span>
+    <div class="result-level" style="color:${D.prediction.color}">${D.prediction.name}</div>
+    <div class="result-risk">${D.prediction.risk}</div>
+    <div class="result-bmi-row">
+      <div class="bmi-pill"><div class="bmi-num">${bmi}</div><div class="bmi-lab">BMI</div></div>
+      <div class="bmi-pill"><div class="bmi-num">${D.weight_kg}<span style="font-size:.9rem">kg</span></div><div class="bmi-lab">Weight</div></div>
+      <div class="bmi-pill"><div class="bmi-num">${D.height_m}<span style="font-size:.9rem">m</span></div><div class="bmi-lab">Height</div></div>
+    </div>
+    <p class="result-verdict">${meta.verdict}</p>
+  </div>`;
+
+  // ── DISCLAIMER ──
+  html += `<div class="disclaimer"><strong>Important:</strong> This assessment is generated by a machine learning model trained on population data. It is a screening tool, not a clinical diagnosis. Please consult a qualified healthcare professional before making significant changes to your diet, exercise regimen, or medical treatment.</div>`;
+
+  // ── CONFIDENCE ──
+  html += `<div class="conf-card"><div class="sec-title">📊 Prediction Confidence</div><div class="bars" id="barsWrap"></div></div>`;
+
+  // ── LIFESTYLE SNAPSHOT ──
+  const lf = [
+    {label:"High-Calorie Foods", val: u.FAVC==='yes'?'Frequently consumed':'Avoids them', badge: getBadge(u.FAVC,'favc')},
+    {label:"Daily Water Intake", val: u.CH2O+' litres', badge: getBadge(u.CH2O,'water')},
+    {label:"Exercise Frequency", val: u.FAF+' days/week', badge: getBadge(u.FAF,'exercise')},
+    {label:"Smoking", val: u.SMOKE==='yes'?'Yes':'No', badge: getBadge(u.SMOKE,'smoke')},
+    {label:"Alcohol Consumption", val: u.CALC, badge: getBadge(u.CALC,'alcohol')},
+    {label:"Screen Time", val: u.TUE+' hrs/day', badge: getBadge(u.TUE,'screen')},
+    {label:"Calorie Tracking", val: u.SCC==='yes'?'Yes':'No', badge: getBadge(u.SCC,'scc')},
+    {label:"Transport", val: u.MTRANS?.replace('_',' ')||'—', badge:''},
+  ];
+
+  html += `<div class="lifestyle-card">
+    <div class="sec-title">🔍 Your Lifestyle Snapshot</div>
+    <table class="lf-table">
+      <thead><tr><th>Factor</th><th>Your Input</th><th>Status</th></tr></thead>
+      <tbody>
+        ${lf.map(r=>`<tr><td>${r.label}</td><td>${r.val}</td><td>${r.badge}</td></tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+
+  // ── OFFICIAL PLANS ──
+  html += `<div class="plans-card">
+    <div class="sec-title">📋 Evidence-Based Action Plan</div>
+    <div class="plans-grid">
+      <div class="plan-block">
+        <h4>🥗 Dietary Plan</h4>
+        <ul>${plans.diet.map(s=>`<li>${s}</li>`).join('')}</ul>
+      </div>
+      <div class="plan-block">
+        <h4>🏃 Lifestyle Plan</h4>
+        <ul>${plans.lifestyle.map(s=>`<li>${s}</li>`).join('')}</ul>
+      </div>
+    </div>
+    <p style="margin-top:1rem;font-size:.78rem;color:var(--muted)">Sources: NHS UK Weight Management Guidelines, WHO Global Action Plan on Physical Activity 2018, Academy of Nutrition and Dietetics Evidence-Based Nutrition Practice Guidelines, British Dietetic Association.</p>
+  </div>`;
+
+  // ── PERSONALISED RECS ──
+  html += `<div class="recs-section">
+    <div class="sec-title" style="font-family:var(--font-head);font-size:1.15rem;display:flex;align-items:center;gap:.6rem;margin-bottom:1rem">
+      💡 Personalised Recommendations
+      <div style="flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)"></div>
+    </div>
+    <div class="recs-intro">These steps are tailored to the specific habits and choices you shared in your assessment. They are not generic. Start with whichever feels most manageable — small, consistent changes compound into lasting results.</div>
+    <div class="recs-grid" id="recsGrid"></div>
+  </div>`;
+
+  // ── ACTIONS ──
+  html += `<div class="actions">
+    <a href="/" class="btn btn-secondary">← Retake Assessment</a>
+    <a href="/analysis" class="btn btn-primary">View Full Analysis →</a>
+  </div>`;
+
+  page.innerHTML = html;
+
+  // ── INJECT BARS ──
+  const barsWrap = document.getElementById('barsWrap');
+  const sorted = Object.entries(probs).sort((a,b)=>b[1]-a[1]);
+  sorted.forEach(([name,pct]) => {
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    const isMain = name === D.prediction.name;
+    row.innerHTML = `
+      <div class="bar-name" title="${name}">${name}</div>
+      <div class="bar-track"><div class="bar-fill${isMain?' high':''}" data-w="${pct}"></div></div>
+      <div class="bar-pct">${pct}%</div>`;
+    barsWrap.appendChild(row);
+  });
+  requestAnimationFrame(()=>{
+    document.querySelectorAll('.bar-fill').forEach(b=>{
+      setTimeout(()=>{ b.style.width = b.dataset.w+'%'; }, 200);
+    });
+  });
+
+  // ── INJECT REC CARDS ──
+  const grid = document.getElementById('recsGrid');
+  recs.forEach((rec,i)=>{
+    const card = document.createElement('div');
+    card.className = 'rec-card';
+    card.innerHTML = `
+      <div class="rec-header">
+        <div class="rec-icon">${rec.icon}</div>
+        <div class="rec-title">${rec.title}</div>
+      </div>
+      <ul class="rec-steps">${rec.steps.map(s=>`<li>${s}</li>`).join('')}</ul>`;
+    grid.appendChild(card);
+    setTimeout(()=>{ card.classList.add('visible'); }, i*80+300);
+  });
+}
+</script>
+</body>
+</html>
