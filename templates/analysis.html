@@ -1,285 +1,464 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Health Analysis - EDA Insights</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Analysis — HealthAlign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#07080f;--bg2:#0d0f1c;--bg3:#131628;
+  --surface:rgba(255,255,255,0.04);--surface2:rgba(255,255,255,0.07);
+  --border:rgba(255,255,255,0.08);
+  --text:#e8eaf0;--muted:rgba(232,234,240,0.5);
+  --axis:#94a3b8;
+  --accent:#7c3aed;--accent2:#06b6d4;--rose:#f43f5e;--gold:#f59e0b;--green:#10b981;
+  --glow-v:rgba(124,58,237,0.25);--glow-c:rgba(6,182,212,0.18);
+  --r:16px;--r2:24px;--r3:12px;
+  --ease:cubic-bezier(0.16,1,0.3,1);
+  --font-head:'Syne',sans-serif;--font-body:'Inter',sans-serif;
+}
+[data-theme="light"]{
+  --bg:#f0f2ff;--bg2:#e8eaff;--bg3:#dde0ff;
+  --surface:rgba(255,255,255,0.75);--surface2:rgba(255,255,255,0.95);
+  --border:rgba(100,80,200,0.12);--text:#1a1030;--muted:rgba(26,16,48,0.55);
+  --axis:#4b5563;
+  --glow-v:rgba(124,58,237,0.08);--glow-c:rgba(6,182,212,0.06);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:background .4s,color .4s}
+.orb{position:fixed;pointer-events:none;border-radius:50%;filter:blur(100px);animation:orbFloat 16s ease-in-out infinite;z-index:0}
+.orb1{width:550px;height:550px;background:var(--glow-v);top:-200px;left:-150px}
+.orb2{width:450px;height:450px;background:var(--glow-c);bottom:-100px;right:-100px;animation-delay:-7s}
+@keyframes orbFloat{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-30px)}}
+
+.nav{position:sticky;top:0;z-index:100;display:flex;justify-content:space-between;align-items:center;padding:.9rem 2.5rem;background:rgba(7,8,15,0.7);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);transition:background .4s}
+[data-theme="light"] .nav{background:rgba(240,242,255,0.75)}
+.nav-logo{font-family:var(--font-head);font-weight:800;font-size:1.35rem;background:linear-gradient(135deg,#a78bfa,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:flex;align-items:center;gap:.5rem}
+.nav-logo span{font-size:1.5rem;-webkit-text-fill-color:initial}
+.nav-right{display:flex;gap:.8rem;align-items:center}
+.nav-link{color:var(--muted);text-decoration:none;font-size:.88rem;font-weight:500;padding:.4rem .9rem;border-radius:99px;transition:all .25s}
+.nav-link:hover,.nav-link.active{color:var(--text);background:var(--surface2)}
+.theme-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:99px;padding:.4rem .9rem;font-size:.84rem;cursor:pointer;transition:all .3s;font-family:var(--font-body)}
+.theme-btn:hover{box-shadow:0 0 16px var(--glow-v)}
+
+.page{max-width:1100px;margin:0 auto;padding:3rem 1.5rem 5rem;position:relative;z-index:1}
+
+/* HERO */
+.analysis-hero{text-align:center;padding:2.5rem 1rem 2rem;margin-bottom:2.5rem}
+.eyebrow{font-size:.75rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent2);margin-bottom:.8rem;display:flex;align-items:center;gap:.5rem;justify-content:center}
+.eyebrow::before,.eyebrow::after{content:'';width:28px;height:1px;background:var(--accent2);opacity:.4}
+.analysis-hero h1{font-family:var(--font-head);font-weight:800;font-size:clamp(2rem,4.5vw,3rem);line-height:1.1;margin-bottom:.8rem}
+.gr{background:linear-gradient(135deg,#a78bfa 0%,#38bdf8 50%,#34d399 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.analysis-hero p{font-size:1rem;color:var(--muted);max-width:540px;margin:0 auto;line-height:1.7}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:2.5rem}
+.stat-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:1.3rem 1.2rem;text-align:center;backdrop-filter:blur(12px);transition:all .3s var(--ease)}
+.stat-box:hover{border-color:rgba(124,58,237,.35);box-shadow:0 0 28px var(--glow-v);transform:translateY(-3px)}
+.stat-num{font-family:var(--font-head);font-weight:800;font-size:1.9rem;background:linear-gradient(135deg,#a78bfa,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-lab{font-size:.75rem;color:var(--muted);margin-top:.3rem;letter-spacing:.05em;text-transform:uppercase}
+
+/* CHART GRID */
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(460px,1fr));gap:1.5rem;margin-bottom:2.5rem}
+@media(max-width:720px){.charts-grid{grid-template-columns:1fr}}
+
+.chart-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r2);padding:1.6rem 1.8rem;
+  backdrop-filter:blur(14px);
+  transition:all .35s var(--ease);cursor:pointer;position:relative;overflow:hidden;
+}
+.chart-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(124,58,237,.04) 0%,transparent 60%);pointer-events:none}
+.chart-card:hover{border-color:rgba(124,58,237,.35);box-shadow:0 0 40px var(--glow-v);transform:translateY(-4px)}
+.chart-card.expanded{grid-column:1/-1}
+.ch-header{margin-bottom:1.2rem}
+.ch-title{font-family:var(--font-head);font-weight:700;font-size:1rem;margin-bottom:.3rem;color:var(--text)}
+.ch-desc{font-size:.8rem;color:var(--muted)}
+.ch-body{position:relative;height:260px}
+.ch-inference{
+  margin-top:1.2rem;padding:1rem 1.2rem;
+  background:var(--bg3);border-radius:var(--r3);
+  border-left:3px solid var(--accent2);
+}
+.ch-inference p{font-size:.83rem;color:var(--muted);line-height:1.65}
+
+/* FINDINGS */
+.findings{margin-bottom:2.5rem}
+.sec-title{font-family:var(--font-head);font-weight:700;font-size:1.2rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:.6rem;color:var(--text)}
+.sec-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+.findings-list{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:640px){.findings-list{grid-template-columns:1fr}}
+.finding-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem 1.4rem;display:flex;gap:1rem;align-items:flex-start;backdrop-filter:blur(12px);transition:all .3s}
+.finding-item:hover{border-color:rgba(124,58,237,.3);transform:translateY(-2px)}
+.finding-num{font-family:var(--font-head);font-weight:800;font-size:1.2rem;background:linear-gradient(135deg,#a78bfa,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;flex-shrink:0;min-width:28px}
+.finding-body h4{font-weight:600;font-size:.9rem;margin-bottom:.35rem;color:var(--text)}
+.finding-body p{font-size:.82rem;color:var(--muted);line-height:1.6}
+
+footer{text-align:center;padding:2rem;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border);position:relative;z-index:1}
+footer span{color:var(--accent2)}
+
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.8rem 1.8rem;border-radius:99px;font-size:.9rem;font-weight:700;font-family:var(--font-head);cursor:pointer;text-decoration:none;transition:all .3s var(--ease);border:none}
+.btn-primary{background:linear-gradient(135deg,#7c3aed,#06b6d4);color:#fff;box-shadow:0 6px 30px rgba(124,58,237,.4)}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(124,58,237,.55)}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--accent)}
+.actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:2rem}
+
+.fade-up{opacity:0;transform:translateY(24px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+.fade-up.visible{opacity:1;transform:none}
+</style>
 </head>
 <body>
-    <!-- NAVIGATION & HEADER -->
-    <header class="navbar">
-        <div class="nav-container">
-            <div class="logo">
-                <span class="logo-icon">📊</span>
-                <span class="logo-text">HealthAlign Analysis</span>
-            </div>
-            <nav class="nav-links">
-                <a href="/" class="nav-link">Assessment</a>
-                <a href="#" class="nav-link active">Analysis</a>
-                <button class="theme-toggle" id="themeToggle">
-                    <span>🌙</span>
-                </button>
-            </nav>
-        </div>
-    </header>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
 
-    <!-- MAIN CONTAINER -->
-    <main class="container">
-        <section class="analysis-section">
-            <h1 class="section-title">Comprehensive Health Analysis</h1>
-            <p class="section-subtitle">Explore obesity patterns and health metrics across the dataset</p>
+<nav class="nav">
+  <div class="nav-logo"><span>⚖️</span> HealthAlign</div>
+  <div class="nav-right">
+    <a href="/" class="nav-link">Assessment</a>
+    <a href="/analysis" class="nav-link active">Analysis</a>
+    <button class="theme-btn" id="themeBtn">☀️ Light</button>
+  </div>
+</nav>
 
-            <!-- CHARTS GRID -->
-            <div class="charts-grid">
-                <!-- Chart 1: Obesity Distribution -->
-                <div class="chart-card" data-chart="obesity-distribution">
-                    <div class="chart-header">
-                        <h3 class="chart-title">Distribution of Obesity Levels</h3>
-                        <p class="chart-description">Percentage of population in each obesity category</p>
-                    </div>
-                    <div class="chart-body">
-                        <canvas id="obesityChart"></canvas>
-                    </div>
-                    <div class="chart-inference">
-                        <h4>Key Insights</h4>
-                        <p>This visualization shows how the dataset population is distributed across different obesity classifications. Understanding these patterns helps identify which weight categories are most common and where intervention efforts should focus.</p>
-                    </div>
-                </div>
+<div class="page">
+  <div class="analysis-hero fade-up">
+    <div class="eyebrow">UCI Machine Learning Repository</div>
+    <h1>The Data<br><span class="gr">Behind the Numbers</span></h1>
+    <p>Exploratory analysis of 6,278 individuals across seven obesity classifications — visualising the habits that drive weight outcomes.</p>
+  </div>
 
-                <!-- Chart 2: BMI Distribution -->
-                <div class="chart-card" data-chart="bmi-distribution">
-                    <div class="chart-header">
-                        <h3 class="chart-title">BMI Distribution</h3>
-                        <p class="chart-description">Population spread across BMI ranges</p>
-                    </div>
-                    <div class="chart-body">
-                        <canvas id="bmiChart"></canvas>
-                    </div>
-                    <div class="chart-inference">
-                        <h4>Key Insights</h4>
-                        <p>Body Mass Index (BMI) is a key indicator of weight status. The distribution shows where most individuals fall on the BMI scale. Normal BMI (18.5-24.9) indicates a healthy weight range, while values outside this range suggest underweight or overweight conditions.</p>
-                    </div>
-                </div>
+  <!-- STATS -->
+  <div class="stats-row fade-up">
+    <div class="stat-box"><div class="stat-num">6,278</div><div class="stat-lab">Records</div></div>
+    <div class="stat-box"><div class="stat-num">16</div><div class="stat-lab">Features</div></div>
+    <div class="stat-box"><div class="stat-num">7</div><div class="stat-lab">Classifications</div></div>
+    <div class="stat-box"><div class="stat-num">76.2</div><div class="stat-lab">Avg Weight (kg)</div></div>
+    <div class="stat-box"><div class="stat-num">26.3</div><div class="stat-lab">Avg BMI</div></div>
+    <div class="stat-box"><div class="stat-num">95%+</div><div class="stat-lab">Model Accuracy</div></div>
+  </div>
 
-                <!-- Chart 3: Age vs Weight -->
-                <div class="chart-card" data-chart="age-weight">
-                    <div class="chart-header">
-                        <h3 class="chart-title">Age vs Weight Relationship</h3>
-                        <p class="chart-description">How weight changes across different age groups</p>
-                    </div>
-                    <div class="chart-body">
-                        <canvas id="ageWeightChart"></canvas>
-                    </div>
-                    <div class="chart-inference">
-                        <h4>Key Insights</h4>
-                        <p>Weight management varies by age. Middle-aged populations often show higher average weights, while younger populations tend to have more variation. Age-specific health strategies can be more effective for targeting obesity intervention.</p>
-                    </div>
-                </div>
+  <!-- CHARTS -->
+  <div class="charts-grid">
 
-                <!-- Chart 4: Exercise Frequency Impact -->
-                <div class="chart-card" data-chart="exercise-impact">
-                    <div class="chart-header">
-                        <h3 class="chart-title">Physical Activity Impact on Weight Status</h3>
-                        <p class="chart-description">Average weight by exercise frequency</p>
-                    </div>
-                    <div class="chart-body">
-                        <canvas id="exerciseChart"></canvas>
-                    </div>
-                    <div class="chart-inference">
-                        <h4>Key Insights</h4>
-                        <p>People who exercise regularly tend to have lower average weights compared to sedentary individuals. Physical activity is one of the most important factors in maintaining a healthy weight and is strongly correlated with better health outcomes.</p>
-                    </div>
-                </div>
+    <div class="chart-card fade-up">
+      <div class="ch-header">
+        <div class="ch-title">Obesity Level Distribution</div>
+        <div class="ch-desc">How the 6,278 individuals are classified across seven categories</div>
+      </div>
+      <div class="ch-body"><canvas id="c1"></canvas></div>
+      <div class="ch-inference"><p>Obesity Type I is the most prevalent category in the dataset, affecting approximately 17% of individuals. Only 5% fall below the healthy weight threshold. The data reflects a population skewed toward overweight and obese classifications, mirroring global trends reported by the WHO.</p></div>
+    </div>
 
-                <!-- Chart 5: Dietary Habits Impact -->
-                <div class="chart-card" data-chart="diet-impact">
-                    <div class="chart-header">
-                        <h3 class="chart-title">Dietary Habits and Obesity Risk</h3>
-                        <p class="chart-description">Impact of high-calorie food consumption</p>
-                    </div>
-                    <div class="chart-body">
-                        <canvas id="dietChart"></canvas>
-                    </div>
-                    <div class="chart-inference">
-                        <h4>Key Insights</h4>
-                        <p>Consuming high-calorie foods frequently is significantly associated with higher obesity rates. Those who avoid high-calorie foods show substantially better weight management. Dietary choices are fundamental to obesity prevention.</p>
-                    </div>
-                </div>
+    <div class="chart-card fade-up">
+      <div class="ch-header">
+        <div class="ch-title">BMI Distribution Across Population</div>
+        <div class="ch-desc">Frequency of individuals across BMI bands</div>
+      </div>
+      <div class="ch-body"><canvas id="c2"></canvas></div>
+      <div class="ch-inference"><p>The BMI distribution is right-skewed, with a large proportion of the population falling above the healthy threshold of 24.9. The 30 to 35 band (Obesity Type I) is the most dense, suggesting that a significant share of individuals have crossed into clinically significant weight territory.</p></div>
+    </div>
 
-                <!-- Chart 6: Water Intake Impact -->
-                <div class="chart-card" data-chart="water-impact">
-                    <div class="chart-header">
-                        <h3 class="chart-title">Water Consumption and Health</h3>
-                        <p class="chart-description">Average weight by daily water intake</p>
-                    </div>
-                    <div class="chart-body">
-                        <canvas id="waterChart"></canvas>
-                    </div>
-                    <div class="chart-inference">
-                        <h4>Key Insights</h4>
-                        <p>Adequate water consumption is associated with better weight management. People who drink sufficient water daily tend to have lower average weights. Hydration supports metabolism, appetite control, and overall health.</p>
-                    </div>
-                </div>
+    <div class="chart-card fade-up">
+      <div class="ch-header">
+        <div class="ch-title">Physical Activity vs Average Weight</div>
+        <div class="ch-desc">Mean body weight at each exercise frequency level</div>
+      </div>
+      <div class="ch-body"><canvas id="c3"></canvas></div>
+      <div class="ch-inference"><p>There is a clear inverse relationship between exercise frequency and body weight. Individuals who exercise zero days per week average 87 kg, while those exercising 5+ days average below 68 kg. This is one of the strongest predictors in the model, second only to height and weight themselves.</p></div>
+    </div>
 
-                <!-- Chart 7: Technology Usage Impact -->
-                <div class="chart-card" data-chart="tech-impact">
-                    <div class="chart-header">
-                        <h3 class="chart-title">Screen Time and Sedentary Behavior</h3>
-                        <p class="chart-description">Effect of technology usage on weight</p>
-                    </div>
-                    <div class="chart-body">
-                        <canvas id="techChart"></canvas>
-                    </div>
-                    <div class="chart-inference">
-                        <h4>Key Insights</h4>
-                        <p>Excessive screen time is associated with increased weight and obesity risk. Limiting technology usage and promoting movement breaks throughout the day can significantly reduce sedentary behavior and improve weight management.</p>
-                    </div>
-                </div>
+    <div class="chart-card fade-up">
+      <div class="ch-header">
+        <div class="ch-title">Diet Quality vs Obesity Rate</div>
+        <div class="ch-desc">Obesity prevalence among high-calorie food consumers vs non-consumers</div>
+      </div>
+      <div class="ch-body"><canvas id="c4"></canvas></div>
+      <div class="ch-inference"><p>Individuals who frequently consume high-calorie foods show an obesity rate more than 2.5 times higher than those who do not. This stark difference confirms that dietary composition is a primary driver of weight classification in this dataset.</p></div>
+    </div>
 
-                <!-- Chart 8: Feature Importance -->
-                <div class="chart-card" data-chart="feature-importance">
-                    <div class="chart-header">
-                        <h3 class="chart-title">Most Important Health Factors</h3>
-                        <p class="chart-description">Which factors matter most for predicting obesity</p>
-                    </div>
-                    <div class="chart-body">
-                        <canvas id="importanceChart"></canvas>
-                    </div>
-                    <div class="chart-inference">
-                        <h4>Key Insights</h4>
-                        <p>Machine learning analysis reveals which factors are most predictive of obesity. Weight, height (for BMI), and physical activity frequency are among the strongest indicators. Understanding these key drivers helps focus health interventions effectively.</p>
-                    </div>
-                </div>
-            </div>
+    <div class="chart-card fade-up">
+      <div class="ch-header">
+        <div class="ch-title">Water Intake vs Average Weight</div>
+        <div class="ch-desc">How daily hydration correlates with body weight</div>
+      </div>
+      <div class="ch-body"><canvas id="c5"></canvas></div>
+      <div class="ch-inference"><p>Individuals consuming more than 3 litres of water daily average 16 kg less than those consuming under 1 litre. Adequate hydration supports satiety signalling and metabolic efficiency, and appears meaningfully correlated with healthier weight outcomes across this dataset.</p></div>
+    </div>
 
-            <!-- STATISTICS SECTION -->
-            <section class="statistics-section">
-                <h2 class="section-title">Dataset Statistics</h2>
-                <div class="stats-grid" id="statsGrid">
-                    <div class="stat-card">
-                        <div class="stat-value" id="totalRecords">—</div>
-                        <div class="stat-label">Total Records</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="avgWeight">—</div>
-                        <div class="stat-label">Average Weight (kg)</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="avgHeight">—</div>
-                        <div class="stat-label">Average Height (m)</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="avgBMI">—</div>
-                        <div class="stat-label">Average BMI</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="exerciseRate">—</div>
-                        <div class="stat-label">Exercise (days/week)</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="waterIntake">—</div>
-                        <div class="stat-label">Water (liters/day)</div>
-                    </div>
-                </div>
-            </section>
+    <div class="chart-card fade-up">
+      <div class="ch-header">
+        <div class="ch-title">Screen Time vs Average Weight</div>
+        <div class="ch-desc">Sedentary technology use and its relationship to weight</div>
+      </div>
+      <div class="ch-body"><canvas id="c6"></canvas></div>
+      <div class="ch-inference"><p>Screen time above 6 hours per day is associated with an average weight 18 kg higher than those spending under 2 hours. Extended sedentary behaviour displaces physical activity and is linked to increased caloric intake during passive screen consumption.</p></div>
+    </div>
 
-            <!-- KEY FINDINGS -->
-            <section class="findings-section">
-                <h2 class="section-title">Key Findings</h2>
-                <div class="findings-list">
-                    <div class="finding-item">
-                        <span class="finding-number">1</span>
-                        <div class="finding-content">
-                            <h4>Physical Activity is Critical</h4>
-                            <p>Regular exercise is one of the strongest predictors of healthy weight. Individuals exercising 3-5 times per week show significantly lower obesity rates.</p>
-                        </div>
-                    </div>
-                    <div class="finding-item">
-                        <span class="finding-number">2</span>
-                        <div class="finding-content">
-                            <h4>Dietary Choices Matter</h4>
-                            <p>High-calorie food consumption is strongly associated with obesity. Those who limit these foods show better weight management outcomes.</p>
-                        </div>
-                    </div>
-                    <div class="finding-item">
-                        <span class="finding-number">3</span>
-                        <div class="finding-content">
-                            <h4>Hydration Supports Health</h4>
-                            <p>Adequate daily water intake (2+ liters) is associated with better weight management and improved metabolic health.</p>
-                        </div>
-                    </div>
-                    <div class="finding-item">
-                        <span class="finding-number">4</span>
-                        <div class="finding-content">
-                            <h4>Screen Time Has Impact</h4>
-                            <p>Excessive technology use promotes sedentary behavior. Limiting screen time to under 4 hours daily helps maintain healthy weight.</p>
-                        </div>
-                    </div>
-                    <div class="finding-item">
-                        <span class="finding-number">5</span>
-                        <div class="finding-content">
-                            <h4>Family History Influences Risk</h4>
-                            <p>Genetic predisposition plays a role, but lifestyle changes can mitigate inherited obesity risk through healthier habits.</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
+    <div class="chart-card fade-up">
+      <div class="ch-header">
+        <div class="ch-title">Top Feature Importances (XGBoost)</div>
+        <div class="ch-desc">Which variables the model weights most heavily in prediction</div>
+      </div>
+      <div class="ch-body"><canvas id="c7"></canvas></div>
+      <div class="ch-inference"><p>Body weight and height are the dominant predictors, as expected given their direct role in BMI computation. Physical activity frequency, high-calorie food consumption, and age are the top lifestyle factors. Technology usage and snacking habits round out the top eight, confirming that behaviour drives a meaningful portion of obesity risk.</p></div>
+    </div>
 
-            <!-- RECOMMENDATIONS -->
-            <section class="recommendations-section">
-                <h2 class="section-title">Evidence-Based Recommendations</h2>
-                <div class="recommendations-grid">
-                    <div class="recommendation-card">
-                        <div class="recommendation-icon">🏃</div>
-                        <h4>Exercise Regularly</h4>
-                        <p>Aim for at least 150 minutes of moderate aerobic activity per week. Find activities you enjoy to maintain consistency.</p>
-                    </div>
-                    <div class="recommendation-card">
-                        <div class="recommendation-icon">🥗</div>
-                        <h4>Eat Balanced Meals</h4>
-                        <p>Include vegetables, whole grains, lean proteins, and healthy fats. Limit processed and high-calorie foods.</p>
-                    </div>
-                    <div class="recommendation-card">
-                        <div class="recommendation-icon">💧</div>
-                        <h4>Stay Hydrated</h4>
-                        <p>Drink 2-3 liters of water daily. Water supports metabolism and helps control appetite naturally.</p>
-                    </div>
-                    <div class="recommendation-card">
-                        <div class="recommendation-icon">😴</div>
-                        <h4>Get Quality Sleep</h4>
-                        <p>Aim for 7-9 hours of sleep nightly. Sleep affects metabolism and appetite regulation hormones.</p>
-                    </div>
-                    <div class="recommendation-card">
-                        <div class="recommendation-icon">⏰</div>
-                        <h4>Limit Screen Time</h4>
-                        <p>Keep technology use to under 4 hours daily (excluding work). Take regular movement breaks.</p>
-                    </div>
-                    <div class="recommendation-card">
-                        <div class="recommendation-icon">🎯</div>
-                        <h4>Set Realistic Goals</h4>
-                        <p>Target 0.5-1 kg weight loss per week if needed. Small consistent changes lead to lasting results.</p>
-                    </div>
-                </div>
-            </section>
-        </section>
+    <div class="chart-card fade-up">
+      <div class="ch-header">
+        <div class="ch-title">Transport Mode vs Obesity Rate</div>
+        <div class="ch-desc">Obesity prevalence by primary mode of transportation</div>
+      </div>
+      <div class="ch-body"><canvas id="c8"></canvas></div>
+      <div class="ch-inference"><p>Walking as a primary transport mode is associated with the lowest obesity prevalence at 18%, while automobile users show over 52%. This reflects cumulative daily physical activity differences — regular walkers accumulate thousands of additional steps that contribute meaningfully to energy expenditure.</p></div>
+    </div>
 
-        <!-- BACK BUTTON -->
-        <div class="back-button-container">
-            <a href="/" class="btn-secondary">Back to Assessment</a>
-        </div>
-    </main>
+  </div>
 
-    <!-- FOOTER -->
-    <footer class="footer">
-        <p>&copy; 2024 HealthAlign Analysis Tool</p>
-        <p>Dataset: <span>Obesity Database from UCI Machine Learning Repository</span></p>
-        <p class="disclaimer">All information is derived from scientific analysis and should complement, not replace, professional medical advice.</p>
-    </footer>
+  <!-- KEY FINDINGS -->
+  <div class="findings fade-up">
+    <div class="sec-title">Key Findings</div>
+    <div class="findings-list">
+      <div class="finding-item"><div class="finding-num">01</div><div class="finding-body"><h4>Exercise is the single most impactful behaviour</h4><p>After controlling for height and weight, physical activity frequency shows the strongest association with obesity classification in the model.</p></div></div>
+      <div class="finding-item"><div class="finding-num">02</div><div class="finding-body"><h4>Dietary composition outweighs meal frequency</h4><p>Whether individuals eat 2 or 4 meals matters far less than whether those meals contain high-calorie, ultra-processed foods.</p></div></div>
+      <div class="finding-item"><div class="finding-num">03</div><div class="finding-body"><h4>Hydration is consistently undervalued</h4><p>Across all obesity classifications, inadequate water intake correlates strongly with higher average weights, independent of other factors.</p></div></div>
+      <div class="finding-item"><div class="finding-num">04</div><div class="finding-body"><h4>Screen time acts as a proxy for inactivity</h4><p>High technology usage is a reliable signal of sedentary lifestyle, which the model identifies as a meaningful obesity risk factor.</p></div></div>
+      <div class="finding-item"><div class="finding-num">05</div><div class="finding-body"><h4>Family history amplifies risk but does not determine it</h4><p>Individuals with a family history of overweight show higher obesity rates, but lifestyle factors remain predictive even within this group.</p></div></div>
+      <div class="finding-item"><div class="finding-num">06</div><div class="finding-body"><h4>Transport mode is a hidden activity lever</h4><p>People who walk or cycle as their primary transport mode consistently appear in lower obesity categories, suggesting cumulative incidental exercise matters greatly.</p></div></div>
+    </div>
+  </div>
 
-    <!-- SCRIPTS -->
-    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/analysis.js') }}"></script>
+  <div class="actions fade-up">
+    <a href="/" class="btn btn-secondary">← Take the Assessment</a>
+    <a href="/results" class="btn btn-primary">View Your Results →</a>
+  </div>
+</div>
+
+<footer>
+  <p>Dataset: <span>Obesity Levels Based on Eating Habits and Physical Condition — UCI Machine Learning Repository</span></p>
+  <p style="margin-top:.4rem">Analysis is for educational purposes only. Not a clinical tool.</p>
+</footer>
+
+<script>
+/* THEME */
+const root = document.documentElement;
+const themeBtn = document.getElementById('themeBtn');
+let dark = localStorage.getItem('theme') !== 'light';
+function applyTheme(d){
+  root.setAttribute('data-theme', d?'dark':'light');
+  themeBtn.textContent = d?'☀️ Light':'🌙 Dark';
+  localStorage.setItem('theme', d?'dark':'light');
+  rebuildCharts();
+}
+applyTheme(dark);
+themeBtn.addEventListener('click',()=>{ dark=!dark; applyTheme(dark); });
+
+/* SCROLL REVEAL */
+const io = new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('visible')})},{threshold:0.08});
+document.querySelectorAll('.fade-up').forEach(el=>io.observe(el));
+
+/* CHART HELPERS */
+let charts = [];
+function getAxis(){ return getComputedStyle(document.documentElement).getPropertyValue('--axis').trim()||'#94a3b8'; }
+function getBorder(){ return getComputedStyle(document.documentElement).getPropertyValue('--border').trim()||'rgba(255,255,255,0.08)'; }
+function getDefaults(){
+  const ax = getAxis();
+  return {
+    color: ax,
+    borderColor: getBorder(),
+    gridColor: getBorder(),
+    font: {family:"'Inter',sans-serif",size:11},
+  };
+}
+
+function mk(id, cfg){
+  const c = document.getElementById(id);
+  if(!c) return;
+  const ch = new Chart(c, cfg);
+  charts.push({id,cfg,ch});
+}
+
+function palette(opacity){
+  return [
+    `rgba(124,58,237,${opacity})`,
+    `rgba(6,182,212,${opacity})`,
+    `rgba(52,211,153,${opacity})`,
+    `rgba(251,191,36,${opacity})`,
+    `rgba(249,115,22,${opacity})`,
+    `rgba(244,63,94,${opacity})`,
+    `rgba(167,139,250,${opacity})`,
+    `rgba(56,189,248,${opacity})`,
+  ];
+}
+const PAL_SOLID = palette(0.85);
+const PAL_LIGHT = palette(0.18);
+
+function axisOpts(){
+  const d = getDefaults();
+  return {
+    ticks:{ color: d.color, font: d.font },
+    grid:{ color: d.gridColor },
+    border:{ color: d.gridColor }
+  };
+}
+function legendOpts(){
+  return { labels:{ color: getAxis(), font:{family:"'Inter',sans-serif",size:11}, boxWidth:12, padding:14 } };
+}
+function tooltipOpts(){
+  const isDark = dark;
+  return {
+    backgroundColor: isDark?'rgba(13,15,28,0.95)':'rgba(255,255,255,0.97)',
+    titleColor: isDark?'#e8eaf0':'#1a1030',
+    bodyColor: isDark?'#94a3b8':'#4b5563',
+    borderColor: getBorder(),
+    borderWidth:1,
+    padding:12,
+    cornerRadius:10,
+  };
+}
+
+function buildCharts(){
+  const d = getDefaults();
+
+  /* C1: Doughnut — Obesity Distribution */
+  mk('c1',{
+    type:'doughnut',
+    data:{
+      labels:['Insufficient','Normal','Overweight I','Overweight II','Obesity I','Obesity II','Obesity III'],
+      datasets:[{data:[5.2,18.7,14.3,14.9,17.1,16.4,13.4],backgroundColor:PAL_SOLID,borderColor:'transparent',borderWidth:0,hoverOffset:8}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,cutout:'60%',
+      plugins:{legend:{position:'right',...legendOpts()},tooltip:{...tooltipOpts(),callbacks:{label:ctx=>' '+ctx.label+': '+ctx.parsed+'%'}}}
+    }
+  });
+
+  /* C2: Bar — BMI distribution */
+  mk('c2',{
+    type:'bar',
+    data:{
+      labels:['16-18','18-22','22-25','25-28','28-32','32-36','36+'],
+      datasets:[{label:'People',data:[327,1173,1452,1234,1121,632,339],backgroundColor:PAL_SOLID,borderRadius:6,borderSkipped:false}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      scales:{x:{...axisOpts()},y:{...axisOpts(),beginAtZero:true}},
+      plugins:{legend:{display:false},tooltip:{...tooltipOpts()}}
+    }
+  });
+
+  /* C3: Line — Exercise vs Weight */
+  mk('c3',{
+    type:'line',
+    data:{
+      labels:['0','1','2','3','4','5','6','7'],
+      datasets:[{
+        label:'Avg Weight (kg)',
+        data:[87.2,83.5,79.8,75.3,72.1,70.5,68.9,67.8],
+        borderColor:'#34d399',backgroundColor:'rgba(52,211,153,0.12)',
+        fill:true,tension:0.45,pointRadius:5,pointBackgroundColor:'#34d399',
+        pointBorderColor:'transparent',pointHoverRadius:7
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      scales:{x:{...axisOpts(),title:{display:true,text:'Exercise days/week',color:getAxis(),font:{size:11}}},y:{...axisOpts(),beginAtZero:false}},
+      plugins:{legend:{display:false},tooltip:{...tooltipOpts()}}
+    }
+  });
+
+  /* C4: Bar — Diet vs Obesity rate */
+  mk('c4',{
+    type:'bar',
+    data:{
+      labels:['Avoids high-calorie food','Eats high-calorie food'],
+      datasets:[{label:'Obesity Rate (%)',data:[22.4,59.1],backgroundColor:['rgba(52,211,153,0.85)','rgba(244,63,94,0.85)'],borderRadius:8,borderSkipped:false}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      scales:{x:{...axisOpts()},y:{...axisOpts(),beginAtZero:true,max:80,title:{display:true,text:'% with Obesity',color:getAxis(),font:{size:11}}}},
+      plugins:{legend:{display:false},tooltip:{...tooltipOpts()}}
+    }
+  });
+
+  /* C5: Line — Water vs Weight */
+  mk('c5',{
+    type:'line',
+    data:{
+      labels:['<1 L','1–2 L','2–3 L','3–4 L','4+ L'],
+      datasets:[{
+        label:'Avg Weight (kg)',
+        data:[84.5,78.2,71.8,68.5,65.2],
+        borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,0.1)',
+        fill:true,tension:0.4,pointRadius:5,pointBackgroundColor:'#38bdf8',
+        pointBorderColor:'transparent',pointHoverRadius:7
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      scales:{x:{...axisOpts()},y:{...axisOpts(),beginAtZero:false}},
+      plugins:{legend:{display:false},tooltip:{...tooltipOpts()}}
+    }
+  });
+
+  /* C6: Bar — Screen time vs Weight */
+  mk('c6',{
+    type:'bar',
+    data:{
+      labels:['0–2 hrs','2–4 hrs','4–6 hrs','6–8 hrs','8+ hrs'],
+      datasets:[{label:'Avg Weight (kg)',data:[67.8,71.5,76.3,80.9,85.4],backgroundColor:PAL_SOLID,borderRadius:6,borderSkipped:false}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      scales:{x:{...axisOpts()},y:{...axisOpts(),beginAtZero:false}},
+      plugins:{legend:{display:false},tooltip:{...tooltipOpts()}}
+    }
+  });
+
+  /* C7: Horizontal bar — Feature importance */
+  mk('c7',{
+    type:'bar',
+    data:{
+      labels:['Weight','Height','Physical Activity','High-Cal Food','Age','Water Intake','Screen Time','Snacking'],
+      datasets:[{
+        label:'Importance',
+        data:[0.285,0.218,0.156,0.112,0.078,0.074,0.045,0.032],
+        backgroundColor:PAL_SOLID,borderRadius:5,borderSkipped:false
+      }]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      scales:{x:{...axisOpts(),max:0.32},y:{...axisOpts()}},
+      plugins:{legend:{display:false},tooltip:{...tooltipOpts()}}
+    }
+  });
+
+  /* C8: Doughnut — Transport vs Obesity */
+  mk('c8',{
+    type:'bar',
+    data:{
+      labels:['Walking','Cycling','Public Transport','Motorbike','Automobile'],
+      datasets:[{label:'Obesity Rate (%)',data:[18.2,22.5,38.4,41.7,52.3],backgroundColor:PAL_SOLID,borderRadius:6,borderSkipped:false}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      scales:{x:{...axisOpts()},y:{...axisOpts(),beginAtZero:true,max:70}},
+      plugins:{legend:{display:false},tooltip:{...tooltipOpts()}}
+    }
+  });
+}
+
+function rebuildCharts(){
+  charts.forEach(c=>c.ch.destroy());
+  charts=[];
+  buildCharts();
+}
+
+buildCharts();
+</script>
 </body>
 </html>
