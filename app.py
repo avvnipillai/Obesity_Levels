@@ -6,34 +6,72 @@ import pandas as pd
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
 
-# ── Load models ───────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+#  SAFE LOADER  — strips use_label_encoder from XGBoost models
+#  that were saved with older xgboost versions
+# ─────────────────────────────────────────────────────────────
+def _patch_xgb(obj):
+    """Remove stale use_label_encoder from XGBClassifier at any level."""
+    try:
+        # 1. Instance __dict__
+        if hasattr(obj, '__dict__'):
+            obj.__dict__.pop('use_label_encoder', None)
+        # 2. Class __dict__ (where newer XGBoost puts it as a property)
+        cls = type(obj)
+        if 'use_label_encoder' in vars(cls):
+            try:
+                delattr(cls, 'use_label_encoder')
+            except (AttributeError, TypeError):
+                pass
+        # 3. __init_params__ dict used internally by xgboost
+        ip = getattr(obj, '__init_params__', None)
+        if isinstance(ip, dict):
+            ip.pop('use_label_encoder', None)
+        # 4. xgboost get_xgb_params() cache
+        if hasattr(obj, '_Booster') and obj._Booster is not None:
+            pass  # Booster itself is fine; no patching needed
+    except Exception:
+        pass
+    return obj
+
+def safe_load(path):
+    obj = joblib.load(path)
+    _patch_xgb(obj)
+    return obj
+
+# ─────────────────────────────────────────────────────────────
+#  LOAD ARTEFACTS
+# ─────────────────────────────────────────────────────────────
 model = scaler = le_dict = tgt_enc = cat_cols = metadata = None
+_load_error = None
+
 try:
-    model    = joblib.load('xgboost_model.pkl')
-    scaler   = joblib.load('scaler.pkl')
-    le_dict  = joblib.load('label_encoders.pkl')
-    tgt_enc  = joblib.load('target_encoder.pkl')
-    cat_cols = joblib.load('categorical_cols.pkl')
-    metadata = joblib.load('model_metadata.pkl')
+    model    = safe_load('xgboost_model.pkl')
+    scaler   = safe_load('scaler.pkl')
+    le_dict  = safe_load('label_encoders.pkl')
+    tgt_enc  = safe_load('target_encoder.pkl')
+    cat_cols = safe_load('categorical_cols.pkl')
+    metadata = safe_load('model_metadata.pkl')
 
-    # ── XGBoost version-compatibility patch ───────────────────────────────────
-    # Models trained with xgboost < 1.6 store use_label_encoder in __dict__.
-    # xgboost >= 1.6 removed that attribute and raises AttributeError on predict().
-    # Deleting it from the instance dict is the correct fix (model weights intact).
-    if hasattr(model, 'use_label_encoder'):
-        try:
-            del model.__dict__['use_label_encoder']
-        except KeyError:
-            pass
+    # Warm-up: catch any remaining attribute errors at startup
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        _dummy = np.zeros((1, len(metadata['feature_names'])))
+        model.predict(_dummy)
 
-    print("Models loaded OK")
+    print("✓ Models loaded and verified")
+
 except FileNotFoundError as e:
-    print(f"Missing model file: {e}")
+    _load_error = f"Missing file: {e}"
+    print(f"✗ {_load_error}")
 except Exception as e:
-    print(f"Model load error: {e}")
+    _load_error = str(e)
+    print(f"✗ Load error: {e}")
     print(traceback.format_exc())
 
-# ── Class metadata ────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+#  CLASS METADATA
+# ─────────────────────────────────────────────────────────────
 OB_META = {
     0: dict(name="Insufficient Weight", risk="Underweight",    color="#38bdf8", emoji="⚠️"),
     1: dict(name="Normal Weight",        risk="Healthy",        color="#34d399", emoji="✅"),
@@ -44,24 +82,26 @@ OB_META = {
     6: dict(name="Obesity Type III",     risk="Critical Risk",  color="#dc2626", emoji="🚨"),
 }
 
-# ── Personalised recommendations ──────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+#  RECOMMENDATIONS
+# ─────────────────────────────────────────────────────────────
 def personalized_recs(d):
-    recs  = []
-    favc  = d.get('FAVC', 'no')
-    fcvc  = float(d.get('FCVC', 2))
-    ch2o  = float(d.get('CH2O', 2))
-    faf   = float(d.get('FAF', 2))
-    smoke = d.get('SMOKE', 'no')
-    calc  = d.get('CALC', 'no')
-    scc   = d.get('SCC', 'no')
-    caec  = d.get('CAEC', 'no')
-    tue   = float(d.get('TUE', 2))
-    mtrans= d.get('MTRANS', 'Automobile')
-    ncp   = float(d.get('NCP', 3))
+    recs   = []
+    favc   = d.get('FAVC', 'no')
+    fcvc   = float(d.get('FCVC', 2))
+    ch2o   = float(d.get('CH2O', 2))
+    faf    = float(d.get('FAF', 2))
+    smoke  = d.get('SMOKE', 'no')
+    calc   = d.get('CALC', 'no')
+    scc    = d.get('SCC', 'no')
+    caec   = d.get('CAEC', 'no')
+    tue    = float(d.get('TUE', 2))
+    mtrans = d.get('MTRANS', 'Automobile')
+    ncp    = float(d.get('NCP', 3))
 
     if favc == 'yes':
         recs.append({"icon":"🍔","title":"Cut Back on High-Calorie Foods",
-            "steps":["Start by swapping one processed meal a day for something home-cooked.",
+            "steps":["Swap one processed meal a day for something home-cooked.",
                      "Replace sugary drinks with water, herbal teas, or sparkling water.",
                      "Read nutrition labels and aim for under 400 kcal per snack.",
                      "Cook in batches so healthy food is always within reach."]})
@@ -69,40 +109,40 @@ def personalized_recs(d):
         recs.append({"icon":"🥙","title":"Your Diet Choices Are Already a Win",
             "steps":["Keep avoiding ultra-processed and high-calorie packaged foods.",
                      "Continue cooking at home where you control your ingredients.",
-                     "Introduce new whole foods each week to keep meals exciting."]})
+                     "Introduce new whole foods each week to keep meals interesting."]})
 
     if fcvc < 2:
         recs.append({"icon":"🥦","title":"More Vegetables, More Energy",
-            "steps":["Add one handful of leafy greens to every meal.",
-                     "Try roasting vegetables — it transforms even the boring ones.",
-                     "Frozen vegetables are just as nutritious and far more convenient.",
+            "steps":["Add a handful of leafy greens to every meal.",
+                     "Try roasting vegetables — it transforms even boring ones.",
+                     "Frozen vegetables are just as nutritious and more convenient.",
                      "Aim for at least 3 different colours on your plate each day."]})
 
     if ch2o < 2:
         recs.append({"icon":"💧","title":"Hydration Is Underrated",
-            "steps":["Keep a 1-litre water bottle at your desk and refill it twice daily.",
-                     "Start every morning with a full glass of water before coffee or tea.",
+            "steps":["Keep a 1-litre bottle at your desk and refill it twice daily.",
+                     "Start every morning with a full glass of water before coffee.",
                      "Add lemon, cucumber, or mint if plain water feels boring.",
-                     "Your daily goal: 2.5 to 3 litres."]})
+                     "Daily goal: 2.5 to 3 litres."]})
 
     if faf < 2:
         recs.append({"icon":"🏃","title":"Move More and Start Small",
-            "steps":["A 20-minute walk after dinner is a powerful place to start.",
-                     "Find one activity you genuinely enjoy: dancing, cycling, or swimming.",
+            "steps":["A 20-minute walk after dinner is a great place to start.",
+                     "Find one activity you enjoy: dancing, cycling, or swimming.",
                      "Build gradually to 150 minutes of moderate activity per week.",
-                     "Take the stairs, park further away, and treat every step as progress."]})
+                     "Take the stairs, park further away, treat every step as progress."]})
     else:
-        recs.append({"icon":"💪","title":"Your Activity Level Is a Strength",
-            "steps":["Keep up your exercise habit — it is one of the strongest predictors of long-term health.",
-                     "Consider adding strength training 2 days a week if you have not already.",
+        recs.append({"icon":"💪","title":"Your Activity Level Is a Real Strength",
+            "steps":["Keep up your exercise habit — it predicts long-term health strongly.",
+                     "Consider adding strength training 2 days a week.",
                      "Recover well: prioritise sleep and protein after workouts."]})
 
     if smoke == 'yes':
         recs.append({"icon":"🚭","title":"Quitting Smoking Is the Single Best Thing You Can Do",
-            "steps":["Speak to your doctor about nicotine replacement therapy options.",
-                     "Try a certified quit-smoking programme such as the NHS Stop Smoking service.",
-                     "Set a quit date and tell someone you trust to hold you accountable.",
-                     "Replace the habit with something physical: a short walk or deep breathing exercises."]})
+            "steps":["Speak to your doctor about nicotine replacement therapy.",
+                     "Try a certified quit programme such as the NHS Stop Smoking service.",
+                     "Set a quit date and tell someone you trust to keep you accountable.",
+                     "Replace the habit with something physical: a walk or deep breathing."]})
 
     if calc in ['frequently', 'always']:
         recs.append({"icon":"🍷","title":"Moderate Your Alcohol Intake",
@@ -114,21 +154,21 @@ def personalized_recs(d):
     if scc == 'no':
         recs.append({"icon":"📊","title":"Start Tracking What You Eat",
             "steps":["Try MyFitnessPal or Cronometer for just one week.",
-                     "Most people are surprised by how many calories their lighter meals contain.",
-                     "You do not need to track forever — just until you develop a clear sense of portions.",
-                     "Focus on protein and fibre intake, not just total calories."]})
+                     "Most people are surprised by how many calories light meals contain.",
+                     "Track until you develop a clear sense of portions, then stop.",
+                     "Focus on protein and fibre, not just total calories."]})
 
     if caec in ['frequently', 'always']:
         recs.append({"icon":"🍎","title":"Bring Mindfulness to Snacking",
-            "steps":["Before reaching for a snack, drink a glass of water and wait 10 minutes.",
-                     "Prepare healthy snack portions in advance: nuts, fruit, or yoghurt.",
-                     "Avoid eating in front of screens as it leads to significantly more consumption.",
+            "steps":["Before reaching for a snack, drink water and wait 10 minutes.",
+                     "Prepare healthy portions in advance: nuts, fruit, or yoghurt.",
+                     "Avoid eating in front of screens — it leads to far more consumption.",
                      "Keep unhealthy snacks out of the house entirely."]})
 
     if tue > 4:
         recs.append({"icon":"📱","title":"Break the Screen-Sitting Cycle",
             "steps":["Set a timer to stand and stretch for 5 minutes every hour.",
-                     "Use the Pomodoro approach: 25 minutes of work, then a 5-minute movement break.",
+                     "Try 25 minutes of work followed by 5 minutes of movement.",
                      "Walk while taking calls. Stretch while watching TV.",
                      "Limit recreational screen time to under 2 hours after work."]})
 
@@ -136,20 +176,22 @@ def personalized_recs(d):
         recs.append({"icon":"🚴","title":"Add Movement to Your Commute",
             "steps":["Try cycling or walking for trips under 2 km.",
                      "Get off public transport one stop early and walk the rest.",
-                     "Even parking further from your destination adds meaningful daily steps.",
-                     "Active commuting is exercise you do not have to schedule separately."]})
+                     "Parking further away adds meaningful daily steps.",
+                     "Active commuting is exercise you never have to separately schedule."]})
 
     if ncp > 4:
         recs.append({"icon":"🍽️","title":"Simplify Your Meal Structure",
             "steps":["Aim for 3 balanced meals with at most 1 or 2 planned snacks.",
-                     "Large meals spread across the day are easier to manage than frequent small ones.",
-                     "Eating on a consistent schedule helps regulate hunger hormones.",
-                     "Each main meal should include a source of protein, fibre, and healthy fat."]})
+                     "Large meals spread across the day are easier to manage.",
+                     "Consistent meal timing helps regulate hunger hormones.",
+                     "Each main meal should include protein, fibre, and healthy fat."]})
 
     return recs[:8]
 
 
-# ── Routes ────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+#  ROUTES
+# ─────────────────────────────────────────────────────────────
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -163,21 +205,23 @@ def analysis():
     return render_template('analysis.html')
 
 
-# ── Predict ───────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+#  PREDICT
+# ─────────────────────────────────────────────────────────────
 @app.route('/api/predict', methods=['POST'])
 def predict():
     if model is None:
         return jsonify({
             'success': False,
-            'error': 'Models not loaded. Ensure all .pkl files are present in the root directory.'
+            'error': _load_error or 'Models not loaded. Check .pkl files.'
         }), 500
 
     try:
         d = request.get_json()
         if not d:
-            return jsonify({'success': False, 'error': 'No JSON data received.'}), 400
+            return jsonify({'success': False, 'error': 'No JSON received.'}), 400
 
-        # ── Unit conversions ─────────────────────────────────────────────────
+        # Unit conversions
         h = float(d.get('Height', 0))
         w = float(d.get('Weight', 0))
         if d.get('height_unit') == 'ft':
@@ -186,10 +230,11 @@ def predict():
             w = round(w * 0.453592, 2)
 
         if h <= 0 or w <= 0:
-            return jsonify({'success': False, 'error': 'Height and weight must be greater than zero.'}), 400
+            return jsonify({'success': False,
+                            'error': 'Height and weight must be greater than zero.'}), 400
 
         inp = {
-            'Gender':                         d.get('Gender'),
+            'Gender':                         d.get('Gender', 'Male'),
             'Age':                            float(d.get('Age', 25)),
             'Height':                         round(h, 3),
             'Weight':                         round(w, 2),
@@ -197,7 +242,7 @@ def predict():
             'FAVC':                           d.get('FAVC', 'no'),
             'FCVC':                           float(d.get('FCVC', 2)),
             'NCP':                            float(d.get('NCP', 3)),
-            'CAEC':                           d.get('CAEC', 'sometimes'),
+            'CAEC':                           d.get('CAEC', 'Sometimes'),
             'CH2O':                           float(d.get('CH2O', 2)),
             'CALC':                           d.get('CALC', 'no'),
             'SMOKE':                          d.get('SMOKE', 'no'),
@@ -207,16 +252,15 @@ def predict():
             'MTRANS':                         d.get('MTRANS', 'Public_Transportation'),
         }
 
-        df = pd.DataFrame([inp])
-        df = df[metadata['feature_names']]  # enforce column order
+        df_in = pd.DataFrame([inp])
+        df_in = df_in[metadata['feature_names']]
 
         for col in cat_cols:
-            if col in df.columns:
-                df[col] = le_dict[col].transform(df[col].astype(str))
+            if col in df_in.columns:
+                df_in[col] = le_dict[col].transform(df_in[col].astype(str))
 
-        X = scaler.transform(df)
+        X = scaler.transform(df_in)
 
-        # ── Predict — suppress all xgboost deprecation warnings ─────────────
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             pred_idx  = int(model.predict(X)[0])
@@ -226,13 +270,14 @@ def predict():
         meta = OB_META.get(pred_idx, OB_META[1])
         recs = personalized_recs(d)
 
-        prob_dict = {}
-        for i, cls in enumerate(tgt_enc.classes_):
-            prob_dict[cls] = round(float(pred_prob[i]) * 100, 1)
+        prob_dict = {
+            cls: round(float(pred_prob[i]) * 100, 1)
+            for i, cls in enumerate(tgt_enc.classes_)
+        }
 
         return jsonify({
             'success':         True,
-            'prediction': {
+            'prediction':      {
                 'index': pred_idx,
                 'name':  meta['name'],
                 'risk':  meta['risk'],
@@ -252,7 +297,6 @@ def predict():
         return jsonify({'success': False, 'error': str(e)}), 400
 
 
-# ── Error handlers ────────────────────────────────────────────────────────────
 @app.errorhandler(404)
 def not_found(e):
     return jsonify({'error': 'Not found'}), 404
@@ -263,8 +307,5 @@ def server_error(e):
 
 
 if __name__ == '__main__':
-    app.run(
-        debug=False,
-        host='0.0.0.0',
-        port=int(os.environ.get('PORT', 5000))
-    )
+    app.run(debug=False, host='0.0.0.0',
+            port=int(os.environ.get('PORT', 5000)))
