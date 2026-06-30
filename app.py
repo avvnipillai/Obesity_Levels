@@ -40,9 +40,35 @@ def safe_load(path):
     return obj
 
 # ─────────────────────────────────────────────────────────────
+#  LABEL NORMALIZATION
+#  The UCI dataset uses inconsistent casing across columns
+#  (e.g. "Sometimes", "Frequently", "Always" but "no"/"yes"
+#  lowercase). The frontend always sends lowercase values.
+#  This maps any incoming value to whatever exact casing the
+#  trained LabelEncoder actually knows, case-insensitively,
+#  so "sometimes" matches "Sometimes" automatically.
+# ─────────────────────────────────────────────────────────────
+def build_case_lookup(le_dict):
+    """For each encoder, build a {lowercase_label: real_label} map."""
+    lookup = {}
+    for col, le in le_dict.items():
+        lookup[col] = {str(c).lower(): str(c) for c in le.classes_}
+    return lookup
+
+def normalize_value(col, value, lookup):
+    """Return the exact label the encoder expects, or the original
+    value unchanged if no case-insensitive match is found (so the
+    real 'unseen label' error still surfaces for genuinely bad input)."""
+    if col not in lookup:
+        return value
+    key = str(value).strip().lower()
+    return lookup[col].get(key, value)
+
+# ─────────────────────────────────────────────────────────────
 #  LOAD ARTEFACTS
 # ─────────────────────────────────────────────────────────────
 model = scaler = le_dict = tgt_enc = cat_cols = metadata = None
+case_lookup = {}
 _load_error = None
 
 try:
@@ -58,6 +84,8 @@ try:
         warnings.simplefilter('ignore')
         _dummy = np.zeros((1, len(metadata['feature_names'])))
         model.predict(_dummy)
+
+    case_lookup = build_case_lookup(le_dict)
 
     print("✓ Models loaded and verified")
 
@@ -252,12 +280,26 @@ def predict():
             'MTRANS':                         d.get('MTRANS', 'Public_Transportation'),
         }
 
+        # Normalize categorical casing to match what each LabelEncoder
+        # was actually trained on (case-insensitive lookup).
+        for col in cat_cols:
+            if col in inp:
+                inp[col] = normalize_value(col, inp[col], case_lookup)
+
         df_in = pd.DataFrame([inp])
         df_in = df_in[metadata['feature_names']]
 
         for col in cat_cols:
             if col in df_in.columns:
-                df_in[col] = le_dict[col].transform(df_in[col].astype(str))
+                try:
+                    df_in[col] = le_dict[col].transform(df_in[col].astype(str))
+                except ValueError as ve:
+                    known = list(le_dict[col].classes_)
+                    return jsonify({
+                        'success': False,
+                        'error': (f"Invalid value for '{col}': '{inp[col]}'. "
+                                  f"Expected one of: {known}")
+                    }), 400
 
         X = scaler.transform(df_in)
 
