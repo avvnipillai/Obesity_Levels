@@ -72,7 +72,7 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
   margin-bottom:1.2rem;
   border:1px solid var(--result-color,var(--accent));
   color:var(--result-color,var(--accent));
-  background:rgba(from var(--result-color) r g b / 0.1);
+  background:var(--result-bg, rgba(124,58,237,0.12));
 }
 .result-bmi-row{
   display:flex;gap:2rem;justify-content:center;
@@ -217,19 +217,37 @@ const page = document.getElementById('pageContent');
 if(!raw){
   document.getElementById('noData').style.display='block';
 } else {
-  const D = JSON.parse(raw);
-  buildPage(D);
+  try {
+    const D = JSON.parse(raw);
+    buildPage(D);
+  } catch(err) {
+    console.error('Failed to render results:', err);
+    page.innerHTML = `
+      <div class="no-data" style="display:block">
+        <h2>Something went wrong displaying your results</h2>
+        <p>Please retake the assessment. If this keeps happening, check the browser console for details.</p>
+        <p style="margin-top:.6rem;font-size:.75rem;color:var(--muted)">${(err && err.message) ? err.message : ''}</p>
+        <br/>
+        <a href="/" class="btn btn-primary">Go to Assessment</a>
+      </div>`;
+  }
 }
 
 /* OBESITY LEVEL METADATA */
 const OB = {
-  0:{verdict:"Your weight is below the healthy range. While this may not seem alarming, being underweight can carry its own health risks — including weakened immunity, bone density loss, and nutritional deficiencies. It is worth speaking to a healthcare professional about reaching a healthy weight through a nourishing diet.",glow:"rgba(56,189,248,0.25)",textColor:"#38bdf8"},
-  1:{verdict:"Your results indicate a healthy weight range. This is a meaningful achievement and reflects positively on your daily habits. Maintaining this requires consistent effort — keep prioritising balanced nutrition, regular physical activity, and adequate sleep.",glow:"rgba(52,211,153,0.25)",textColor:"#34d399"},
-  2:{verdict:"Your results place you in the Overweight Level I category. This is a moderate signal from your body that some lifestyle adjustments would be beneficial. You are not far from the healthy range, and targeted changes to your diet and activity levels can make a significant difference.",glow:"rgba(251,191,36,0.25)",textColor:"#fbbf24"},
-  3:{verdict:"Your results indicate Overweight Level II. At this stage, the additional weight begins to place measurable strain on your cardiovascular system, joints, and metabolic function. A structured approach to nutrition and exercise, ideally with professional support, is strongly recommended.",glow:"rgba(249,115,22,0.2)",textColor:"#f97316"},
-  4:{verdict:"Your results reflect Obesity Type I. This classification carries elevated health risks including hypertension, type 2 diabetes, and sleep apnea. This is a serious but very manageable condition. Professional guidance from a physician or registered dietitian is strongly advised.",glow:"rgba(248,113,113,0.2)",textColor:"#f87171"},
-  5:{verdict:"Your results reflect Obesity Type II, which is associated with significantly elevated risk of serious health conditions. We urge you to consult with a qualified healthcare provider as a priority. The recommendations below are starting points, but professional medical supervision is essential.",glow:"rgba(239,68,68,0.2)",textColor:"#ef4444"},
-  6:{verdict:"Your results reflect Obesity Type III (also called severe or morbid obesity). This classification requires immediate and sustained medical attention. Please consult a physician as soon as possible. The lifestyle steps below may support your journey, but they must work alongside clinical care — not replace it.",glow:"rgba(220,38,38,0.2)",textColor:"#dc2626"},
+  0:{verdict:"Your weight is below the healthy range. While this may not seem alarming, being underweight can carry its own health risks — including weakened immunity, bone density loss, and nutritional deficiencies. It is worth speaking to a healthcare professional about reaching a healthy weight through a nourishing diet.",glow:"rgba(56,189,248,0.25)",textColor:"#38bdf8",bg:"rgba(56,189,248,0.12)"},
+  1:{verdict:"Your results indicate a healthy weight range. This is a meaningful achievement and reflects positively on your daily habits. Maintaining this requires consistent effort — keep prioritising balanced nutrition, regular physical activity, and adequate sleep.",glow:"rgba(52,211,153,0.25)",textColor:"#34d399",bg:"rgba(52,211,153,0.12)"},
+  2:{verdict:"Your results place you in the Overweight Level I category. This is a moderate signal from your body that some lifestyle adjustments would be beneficial. You are not far from the healthy range, and targeted changes to your diet and activity levels can make a significant difference.",glow:"rgba(251,191,36,0.25)",textColor:"#fbbf24",bg:"rgba(251,191,36,0.12)"},
+  3:{verdict:"Your results indicate Overweight Level II. At this stage, the additional weight begins to place measurable strain on your cardiovascular system, joints, and metabolic function. A structured approach to nutrition and exercise, ideally with professional support, is strongly recommended.",glow:"rgba(249,115,22,0.2)",textColor:"#f97316",bg:"rgba(249,115,22,0.12)"},
+  4:{verdict:"Your results reflect Obesity Type I. This classification carries elevated health risks including hypertension, type 2 diabetes, and sleep apnea. This is a serious but very manageable condition. Professional guidance from a physician or registered dietitian is strongly advised.",glow:"rgba(248,113,113,0.2)",textColor:"#f87171",bg:"rgba(248,113,113,0.12)"},
+  5:{verdict:"Your results reflect Obesity Type II, which is associated with significantly elevated risk of serious health conditions. We urge you to consult with a qualified healthcare provider as a priority. The recommendations below are starting points, but professional medical supervision is essential.",glow:"rgba(239,68,68,0.2)",textColor:"#ef4444",bg:"rgba(239,68,68,0.12)"},
+  6:{verdict:"Your results reflect Obesity Type III (also called severe or morbid obesity). This classification requires immediate and sustained medical attention. Please consult a physician as soon as possible. The lifestyle steps below may support your journey, but they must work alongside clinical care — not replace it.",glow:"rgba(220,38,38,0.2)",textColor:"#dc2626",bg:"rgba(220,38,38,0.12)"},
+};
+
+/* Fallback for any unexpected index value */
+const OB_FALLBACK = {
+  verdict:"We were able to generate your prediction, but could not match it to a known category. Please retake the assessment or contact support if this persists.",
+  glow:"rgba(124,58,237,0.2)", textColor:"#7c3aed", bg:"rgba(124,58,237,0.12)"
 };
 
 /* PLAN DATA keyed by index */
@@ -292,42 +310,43 @@ function getPlans(idx, userInputs){
 }
 
 function getBadge(val, type){
-  // Returns a badge string
   const good = '<span class="badge badge-good">Good</span>';
   const warn = '<span class="badge badge-warn">Improve</span>';
   const bad  = '<span class="badge badge-bad">Concern</span>';
+  if(val === undefined || val === null) return '';
   if(type==='favc') return val==='no'?good:warn;
-  if(type==='water') return parseFloat(val)>=2?good:(parseFloat(val)>=1?warn:bad);
-  if(type==='exercise') return parseFloat(val)>=3?good:(parseFloat(val)>=1?warn:bad);
+  if(type==='water'){ const n=parseFloat(val); if(isNaN(n)) return ''; return n>=2?good:(n>=1?warn:bad); }
+  if(type==='exercise'){ const n=parseFloat(val); if(isNaN(n)) return ''; return n>=3?good:(n>=1?warn:bad); }
   if(type==='smoke') return val==='no'?good:bad;
   if(type==='alcohol') return (val==='no'||val==='sometimes')?good:(val==='frequently'?warn:bad);
-  if(type==='screen') return parseFloat(val)<=3?good:(parseFloat(val)<=6?warn:bad);
+  if(type==='screen'){ const n=parseFloat(val); if(isNaN(n)) return ''; return n<=3?good:(n<=6?warn:bad); }
   if(type==='scc') return val==='yes'?good:warn;
   return '';
 }
 
 function buildPage(D){
+  if(!D || !D.prediction) throw new Error('Malformed result data — missing prediction object.');
+
   const idx = D.prediction.index;
-  const meta = OB[idx];
-  const recs = D.recommendations;
-  const probs = D.probabilities;
-  const bmi = D.bmi;
-  const u = D.user_inputs;
+  const meta = OB[idx] || OB_FALLBACK;
+  const recs = Array.isArray(D.recommendations) ? D.recommendations : [];
+  const probs = D.probabilities || {};
+  const bmi = D.bmi != null ? D.bmi : '—';
+  const u = D.user_inputs || {};
   const plans = getPlans(idx, u);
 
-  // Set CSS var for glow on result hero
   let html = '';
 
   // ── HERO ──
   html += `
-  <div class="result-hero" style="--result-glow:${meta.glow};--result-color:${D.prediction.color}">
-    <span class="result-emoji">${D.prediction.emoji}</span>
-    <div class="result-level" style="color:${D.prediction.color}">${D.prediction.name}</div>
-    <div class="result-risk">${D.prediction.risk}</div>
+  <div class="result-hero" style="--result-glow:${meta.glow};--result-color:${D.prediction.color || meta.textColor};--result-bg:${meta.bg}">
+    <span class="result-emoji">${D.prediction.emoji || '📊'}</span>
+    <div class="result-level" style="color:${D.prediction.color || meta.textColor}">${D.prediction.name || 'Result'}</div>
+    <div class="result-risk">${D.prediction.risk || ''}</div>
     <div class="result-bmi-row">
       <div class="bmi-pill"><div class="bmi-num">${bmi}</div><div class="bmi-lab">BMI</div></div>
-      <div class="bmi-pill"><div class="bmi-num">${D.weight_kg}<span style="font-size:.9rem">kg</span></div><div class="bmi-lab">Weight</div></div>
-      <div class="bmi-pill"><div class="bmi-num">${D.height_m}<span style="font-size:.9rem">m</span></div><div class="bmi-lab">Height</div></div>
+      <div class="bmi-pill"><div class="bmi-num">${D.weight_kg ?? '—'}<span style="font-size:.9rem">kg</span></div><div class="bmi-lab">Weight</div></div>
+      <div class="bmi-pill"><div class="bmi-num">${D.height_m ?? '—'}<span style="font-size:.9rem">m</span></div><div class="bmi-lab">Height</div></div>
     </div>
     <p class="result-verdict">${meta.verdict}</p>
   </div>`;
@@ -341,13 +360,13 @@ function buildPage(D){
   // ── LIFESTYLE SNAPSHOT ──
   const lf = [
     {label:"High-Calorie Foods", val: u.FAVC==='yes'?'Frequently consumed':'Avoids them', badge: getBadge(u.FAVC,'favc')},
-    {label:"Daily Water Intake", val: u.CH2O+' litres', badge: getBadge(u.CH2O,'water')},
-    {label:"Exercise Frequency", val: u.FAF+' days/week', badge: getBadge(u.FAF,'exercise')},
+    {label:"Daily Water Intake", val: (u.CH2O ?? '—')+' litres', badge: getBadge(u.CH2O,'water')},
+    {label:"Exercise Frequency", val: (u.FAF ?? '—')+' days/week', badge: getBadge(u.FAF,'exercise')},
     {label:"Smoking", val: u.SMOKE==='yes'?'Yes':'No', badge: getBadge(u.SMOKE,'smoke')},
-    {label:"Alcohol Consumption", val: u.CALC, badge: getBadge(u.CALC,'alcohol')},
-    {label:"Screen Time", val: u.TUE+' hrs/day', badge: getBadge(u.TUE,'screen')},
+    {label:"Alcohol Consumption", val: u.CALC || '—', badge: getBadge(u.CALC,'alcohol')},
+    {label:"Screen Time", val: (u.TUE ?? '—')+' hrs/day', badge: getBadge(u.TUE,'screen')},
     {label:"Calorie Tracking", val: u.SCC==='yes'?'Yes':'No', badge: getBadge(u.SCC,'scc')},
-    {label:"Transport", val: u.MTRANS?.replace('_',' ')||'—', badge:''},
+    {label:"Transport", val: (u.MTRANS||'').replace(/_/g,' ')||'—', badge:''},
   ];
 
   html += `<div class="lifestyle-card">
@@ -397,36 +416,44 @@ function buildPage(D){
   // ── INJECT BARS ──
   const barsWrap = document.getElementById('barsWrap');
   const sorted = Object.entries(probs).sort((a,b)=>b[1]-a[1]);
-  sorted.forEach(([name,pct]) => {
-    const row = document.createElement('div');
-    row.className = 'bar-row';
-    const isMain = name === D.prediction.name;
-    row.innerHTML = `
-      <div class="bar-name" title="${name}">${name}</div>
-      <div class="bar-track"><div class="bar-fill${isMain?' high':''}" data-w="${pct}"></div></div>
-      <div class="bar-pct">${pct}%</div>`;
-    barsWrap.appendChild(row);
-  });
-  requestAnimationFrame(()=>{
-    document.querySelectorAll('.bar-fill').forEach(b=>{
-      setTimeout(()=>{ b.style.width = b.dataset.w+'%'; }, 200);
+  if(sorted.length === 0){
+    barsWrap.innerHTML = '<p style="font-size:.85rem;color:var(--muted)">Confidence data unavailable.</p>';
+  } else {
+    sorted.forEach(([name,pct]) => {
+      const row = document.createElement('div');
+      row.className = 'bar-row';
+      const isMain = name === D.prediction.name;
+      row.innerHTML = `
+        <div class="bar-name" title="${name}">${name}</div>
+        <div class="bar-track"><div class="bar-fill${isMain?' high':''}" data-w="${pct}"></div></div>
+        <div class="bar-pct">${pct}%</div>`;
+      barsWrap.appendChild(row);
     });
-  });
+    requestAnimationFrame(()=>{
+      document.querySelectorAll('.bar-fill').forEach(b=>{
+        setTimeout(()=>{ b.style.width = b.dataset.w+'%'; }, 200);
+      });
+    });
+  }
 
   // ── INJECT REC CARDS ──
   const grid = document.getElementById('recsGrid');
-  recs.forEach((rec,i)=>{
-    const card = document.createElement('div');
-    card.className = 'rec-card';
-    card.innerHTML = `
-      <div class="rec-header">
-        <div class="rec-icon">${rec.icon}</div>
-        <div class="rec-title">${rec.title}</div>
-      </div>
-      <ul class="rec-steps">${rec.steps.map(s=>`<li>${s}</li>`).join('')}</ul>`;
-    grid.appendChild(card);
-    setTimeout(()=>{ card.classList.add('visible'); }, i*80+300);
-  });
+  if(recs.length === 0){
+    grid.innerHTML = '<p style="font-size:.9rem;color:var(--muted)">No specific recommendations were generated.</p>';
+  } else {
+    recs.forEach((rec,i)=>{
+      const card = document.createElement('div');
+      card.className = 'rec-card';
+      card.innerHTML = `
+        <div class="rec-header">
+          <div class="rec-icon">${rec.icon || '💡'}</div>
+          <div class="rec-title">${rec.title || ''}</div>
+        </div>
+        <ul class="rec-steps">${(rec.steps||[]).map(s=>`<li>${s}</li>`).join('')}</ul>`;
+      grid.appendChild(card);
+      setTimeout(()=>{ card.classList.add('visible'); }, i*80+300);
+    });
+  }
 }
 </script>
 </body>
