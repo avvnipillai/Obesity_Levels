@@ -205,33 +205,14 @@ footer span{color:var(--accent2)}
 /* THEME */
 const root = document.documentElement;
 const themeBtn = document.getElementById('themeBtn');
+const page = document.getElementById('pageContent');
 let dark = localStorage.getItem('theme') !== 'light';
 function applyTheme(d){ root.setAttribute('data-theme',d?'dark':'light'); themeBtn.textContent=d?'☀️ Light':'🌙 Dark'; localStorage.setItem('theme',d?'dark':'light'); }
 applyTheme(dark);
 themeBtn.addEventListener('click',()=>{dark=!dark;applyTheme(dark);});
 
-/* LOAD DATA */
-const raw = sessionStorage.getItem('healthResult');
-const page = document.getElementById('pageContent');
-
-if(!raw){
-  document.getElementById('noData').style.display='block';
-} else {
-  try {
-    const D = JSON.parse(raw);
-    buildPage(D);
-  } catch(err) {
-    console.error('Failed to render results:', err);
-    page.innerHTML = `
-      <div class="no-data" style="display:block">
-        <h2>Something went wrong displaying your results</h2>
-        <p>Please retake the assessment. If this keeps happening, check the browser console for details.</p>
-        <p style="margin-top:.6rem;font-size:.75rem;color:var(--muted)">${(err && err.message) ? err.message : ''}</p>
-        <br/>
-        <a href="/" class="btn btn-primary">Go to Assessment</a>
-      </div>`;
-  }
-}
+/* LOAD DATA executes at the bottom of this script, after all
+   data and functions below are fully declared. See end of file. */
 
 /* OBESITY LEVEL METADATA */
 const OB = {
@@ -453,6 +434,31 @@ function buildPage(D){
       grid.appendChild(card);
       setTimeout(()=>{ card.classList.add('visible'); }, i*80+300);
     });
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   LOAD DATA — runs LAST, after OB, OB_FALLBACK, getPlans,
+   getBadge, and buildPage are all fully declared above.
+══════════════════════════════════════════════════ */
+const raw = sessionStorage.getItem('healthResult');
+
+if(!raw){
+  document.getElementById('noData').style.display='block';
+} else {
+  try {
+    const D = JSON.parse(raw);
+    buildPage(D);
+  } catch(err) {
+    console.error('Failed to render results:', err);
+    page.innerHTML = `
+      <div class="no-data" style="display:block">
+        <h2>Something went wrong displaying your results</h2>
+        <p>Please retake the assessment. If this keeps happening, check the browser console for details.</p>
+        <p style="margin-top:.6rem;font-size:.75rem;color:var(--muted)">${(err && err.message) ? err.message : ''}</p>
+        <br/>
+        <a href="/" class="btn btn-primary">Go to Assessment</a>
+      </div>`;
   }
 }
 </script>
