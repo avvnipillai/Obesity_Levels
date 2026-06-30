@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>HealthAlign — Know Your Body</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 /* ═══════════════════════════════════════════════════
    DESIGN TOKENS
@@ -34,7 +35,7 @@
   --r3:        12px;
   --ease:      cubic-bezier(0.16,1,0.3,1);
 
-  --font-head: 'Space Grotesk', sans-serif;
+  --font-head: 'Fraunces', serif;
   --font-body: 'Inter', sans-serif;
 }
 [data-theme="light"] {
@@ -116,25 +117,29 @@ body{
   padding:7rem 2rem 3rem;position:relative;z-index:1;text-align:center;
 }
 .hero-eyebrow{
+  font-family:var(--font-body);
   font-size:.8rem;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--accent2);font-weight:600;margin-bottom:1.2rem;
+  color:var(--accent2);font-weight:600;margin-bottom:1.4rem;
   display:inline-flex;align-items:center;gap:.6rem;
 }
 .hero-eyebrow::before,.hero-eyebrow::after{
   content:'';width:32px;height:1px;background:var(--accent2);opacity:.5;
 }
 .hero-title{
-  font-family:var(--font-head);font-weight:700;
-  font-size:clamp(2.5rem,6vw,4.2rem);line-height:1.2;
-  margin-bottom:1.2rem;
+  font-family:var(--font-head);font-weight:600;
+  font-size:clamp(2.6rem,6vw,4.4rem);line-height:1.18;
+  letter-spacing:-0.01em;
+  margin-bottom:1.3rem;
 }
 .hero-title .gr{
+  font-style:italic;font-weight:600;
   background:linear-gradient(135deg,#a78bfa 0%,#38bdf8 50%,#34d399 100%);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
 }
 .hero-sub{
-  font-size:1.1rem;color:var(--muted);max-width:520px;
-  line-height:1.7;margin-bottom:3rem;
+  font-family:var(--font-body);
+  font-size:1.12rem;color:var(--muted);max-width:520px;
+  line-height:1.75;margin-bottom:3rem;font-weight:400;
 }
 
 /* ═══ SCALE ANIMATION ═══ */
@@ -208,8 +213,8 @@ body{
 }
 .card:hover{border-color:rgba(124,58,237,.3);box-shadow:0 0 40px var(--glow-v)}
 .card-label{
-  font-family:var(--font-head);font-size:.7rem;font-weight:700;
-  letter-spacing:.12em;text-transform:uppercase;
+  font-family:var(--font-body);font-size:.72rem;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;
   color:var(--accent2);margin-bottom:1.5rem;
   display:flex;align-items:center;gap:.5rem;
 }
